@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InterviewsRouteImport } from './routes/interviews'
+import { Route as LogRouteImport } from './routes/log'
 import { Route as TimelineRouteImport } from './routes/timeline'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const InterviewsRoute = InterviewsRouteImport.update({
   path: '/interviews',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LogRoute = LogRouteImport.update({
+  id: '/log',
+  path: '/log',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TimelineRoute = TimelineRouteImport.update({
   id: '/timeline',
   path: '/timeline',
@@ -32,30 +38,34 @@ const TimelineRoute = TimelineRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
+  '/log': typeof LogRoute
   '/timeline': typeof TimelineRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
+  '/log': typeof LogRoute
   '/timeline': typeof TimelineRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
+  '/log': typeof LogRoute
   '/timeline': typeof TimelineRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/interviews' | '/timeline'
+  fullPaths: '/' | '/interviews' | '/log' | '/timeline'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/interviews' | '/timeline'
-  id: '__root__' | '/' | '/interviews' | '/timeline'
+  to: '/' | '/interviews' | '/log' | '/timeline'
+  id: '__root__' | '/' | '/interviews' | '/log' | '/timeline'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   InterviewsRoute: typeof InterviewsRoute
+  LogRoute: typeof LogRoute
   TimelineRoute: typeof TimelineRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InterviewsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/log': {
+      id: '/log'
+      path: '/log'
+      fullPath: '/log'
+      preLoaderRoute: typeof LogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/timeline': {
       id: '/timeline'
       path: '/timeline'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   InterviewsRoute: InterviewsRoute,
+  LogRoute: LogRoute,
   TimelineRoute: TimelineRoute,
 }
 export const routeTree = rootRouteImport
