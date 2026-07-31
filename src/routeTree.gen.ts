@@ -29,6 +29,7 @@ import { Route as EventCompetitionsRouteImport } from './routes/event.competitio
 import { Route as EventSpeakersRouteImport } from './routes/event.speakers'
 import { Route as ReleasesIndexRouteImport } from './routes/releases.index'
 import { Route as ReleasesAdultRouteImport } from './routes/releases.adult'
+import { Route as ReleasesArchiveRouteImport } from './routes/releases.archive'
 import { Route as ReleasesMinorRouteImport } from './routes/releases.minor'
 
 const IndexRoute = IndexRouteImport.update({
@@ -130,6 +131,11 @@ const ReleasesAdultRoute = ReleasesAdultRouteImport.update({
   path: '/adult',
   getParentRoute: () => ReleasesRoute,
 } as any)
+const ReleasesArchiveRoute = ReleasesArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
+  getParentRoute: () => ReleasesRoute,
+} as any)
 const ReleasesMinorRoute = ReleasesMinorRouteImport.update({
   id: '/minor',
   path: '/minor',
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/event/competitions': typeof EventCompetitionsRoute
   '/event/speakers': typeof EventSpeakersRoute
   '/releases/adult': typeof ReleasesAdultRoute
+  '/releases/archive': typeof ReleasesArchiveRoute
   '/releases/minor': typeof ReleasesMinorRoute
   '/event/': typeof EventIndexRoute
   '/releases/': typeof ReleasesIndexRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/event/competitions': typeof EventCompetitionsRoute
   '/event/speakers': typeof EventSpeakersRoute
   '/releases/adult': typeof ReleasesAdultRoute
+  '/releases/archive': typeof ReleasesArchiveRoute
   '/releases/minor': typeof ReleasesMinorRoute
   '/event': typeof EventIndexRoute
   '/releases': typeof ReleasesIndexRoute
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/event/competitions': typeof EventCompetitionsRoute
   '/event/speakers': typeof EventSpeakersRoute
   '/releases/adult': typeof ReleasesAdultRoute
+  '/releases/archive': typeof ReleasesArchiveRoute
   '/releases/minor': typeof ReleasesMinorRoute
   '/event/': typeof EventIndexRoute
   '/releases/': typeof ReleasesIndexRoute
@@ -222,6 +231,7 @@ export interface FileRouteTypes {
     | '/event/competitions'
     | '/event/speakers'
     | '/releases/adult'
+    | '/releases/archive'
     | '/releases/minor'
     | '/event/'
     | '/releases/'
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/event/competitions'
     | '/event/speakers'
     | '/releases/adult'
+    | '/releases/archive'
     | '/releases/minor'
     | '/event'
     | '/releases'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/event/competitions'
     | '/event/speakers'
     | '/releases/adult'
+    | '/releases/archive'
     | '/releases/minor'
     | '/event/'
     | '/releases/'
@@ -429,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReleasesAdultRouteImport
       parentRoute: typeof ReleasesRoute
     }
+    '/releases/archive': {
+      id: '/releases/archive'
+      path: '/archive'
+      fullPath: '/releases/archive'
+      preLoaderRoute: typeof ReleasesArchiveRouteImport
+      parentRoute: typeof ReleasesRoute
+    }
     '/releases/minor': {
       id: '/releases/minor'
       path: '/minor'
@@ -466,12 +485,14 @@ const EventRouteWithChildren = EventRoute._addFileChildren(EventRouteChildren)
 
 interface ReleasesRouteChildren {
   ReleasesAdultRoute: typeof ReleasesAdultRoute
+  ReleasesArchiveRoute: typeof ReleasesArchiveRoute
   ReleasesMinorRoute: typeof ReleasesMinorRoute
   ReleasesIndexRoute: typeof ReleasesIndexRoute
 }
 
 const ReleasesRouteChildren: ReleasesRouteChildren = {
   ReleasesAdultRoute: ReleasesAdultRoute,
+  ReleasesArchiveRoute: ReleasesArchiveRoute,
   ReleasesMinorRoute: ReleasesMinorRoute,
   ReleasesIndexRoute: ReleasesIndexRoute,
 }
