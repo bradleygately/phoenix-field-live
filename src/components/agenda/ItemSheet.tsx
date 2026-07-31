@@ -15,7 +15,7 @@ export function ItemSheet({
   item: ScheduleItem | null;
   onClose: () => void;
 }) {
-  const { statusOf, setStatus, setNote, crew, reassign } = useStore();
+  const { statusOf, setStatus, reassign } = useStore();
   const [who, setWho] = useState<CrewId>("jesse");
   const [assignment, setAssignment] = useState("");
 
