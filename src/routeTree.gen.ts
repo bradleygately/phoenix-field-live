@@ -10,8 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as EventRouteImport } from './routes/event'
 import { Route as InterviewsRouteImport } from './routes/interviews'
 import { Route as LogRouteImport } from './routes/log'
@@ -23,26 +21,17 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TimelineRouteImport } from './routes/timeline'
 import { Route as WrapRouteImport } from './routes/wrap'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as EventIndexRouteImport } from './routes/event.index'
 import { Route as EventCompetitionsRouteImport } from './routes/event.competitions'
 import { Route as EventSpeakersRouteImport } from './routes/event.speakers'
 import { Route as ReleasesIndexRouteImport } from './routes/releases.index'
 import { Route as ReleasesAdultRouteImport } from './routes/releases.adult'
+import { Route as ReleasesArchiveRouteImport } from './routes/releases.archive'
 import { Route as ReleasesMinorRouteImport } from './routes/releases.minor'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventRoute = EventRouteImport.update({
@@ -100,11 +89,6 @@ const WrapRoute = WrapRouteImport.update({
   path: '/wrap',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const EventIndexRoute = EventIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -130,6 +114,11 @@ const ReleasesAdultRoute = ReleasesAdultRouteImport.update({
   path: '/adult',
   getParentRoute: () => ReleasesRoute,
 } as any)
+const ReleasesArchiveRoute = ReleasesArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
+  getParentRoute: () => ReleasesRoute,
+} as any)
 const ReleasesMinorRoute = ReleasesMinorRouteImport.update({
   id: '/minor',
   path: '/minor',
@@ -138,7 +127,6 @@ const ReleasesMinorRoute = ReleasesMinorRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
   '/event': typeof EventRouteWithChildren
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
@@ -150,17 +138,16 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
-  '/admin': typeof AuthenticatedAdminRoute
   '/event/competitions': typeof EventCompetitionsRoute
   '/event/speakers': typeof EventSpeakersRoute
   '/releases/adult': typeof ReleasesAdultRoute
+  '/releases/archive': typeof ReleasesArchiveRoute
   '/releases/minor': typeof ReleasesMinorRoute
   '/event/': typeof EventIndexRoute
   '/releases/': typeof ReleasesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
   '/map': typeof MapRoute
@@ -170,10 +157,10 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
-  '/admin': typeof AuthenticatedAdminRoute
   '/event/competitions': typeof EventCompetitionsRoute
   '/event/speakers': typeof EventSpeakersRoute
   '/releases/adult': typeof ReleasesAdultRoute
+  '/releases/archive': typeof ReleasesArchiveRoute
   '/releases/minor': typeof ReleasesMinorRoute
   '/event': typeof EventIndexRoute
   '/releases': typeof ReleasesIndexRoute
@@ -181,8 +168,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/auth': typeof AuthRoute
   '/event': typeof EventRouteWithChildren
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
@@ -194,10 +179,10 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/event/competitions': typeof EventCompetitionsRoute
   '/event/speakers': typeof EventSpeakersRoute
   '/releases/adult': typeof ReleasesAdultRoute
+  '/releases/archive': typeof ReleasesArchiveRoute
   '/releases/minor': typeof ReleasesMinorRoute
   '/event/': typeof EventIndexRoute
   '/releases/': typeof ReleasesIndexRoute
@@ -206,7 +191,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/auth'
     | '/event'
     | '/interviews'
     | '/log'
@@ -218,17 +202,16 @@ export interface FileRouteTypes {
     | '/settings'
     | '/timeline'
     | '/wrap'
-    | '/admin'
     | '/event/competitions'
     | '/event/speakers'
     | '/releases/adult'
+    | '/releases/archive'
     | '/releases/minor'
     | '/event/'
     | '/releases/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/auth'
     | '/interviews'
     | '/log'
     | '/map'
@@ -238,18 +221,16 @@ export interface FileRouteTypes {
     | '/settings'
     | '/timeline'
     | '/wrap'
-    | '/admin'
     | '/event/competitions'
     | '/event/speakers'
     | '/releases/adult'
+    | '/releases/archive'
     | '/releases/minor'
     | '/event'
     | '/releases'
   id:
     | '__root__'
     | '/'
-    | '/_authenticated'
-    | '/auth'
     | '/event'
     | '/interviews'
     | '/log'
@@ -261,10 +242,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/timeline'
     | '/wrap'
-    | '/_authenticated/admin'
     | '/event/competitions'
     | '/event/speakers'
     | '/releases/adult'
+    | '/releases/archive'
     | '/releases/minor'
     | '/event/'
     | '/releases/'
@@ -272,8 +253,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AuthRoute: typeof AuthRoute
   EventRoute: typeof EventRouteWithChildren
   InterviewsRoute: typeof InterviewsRoute
   LogRoute: typeof LogRoute
@@ -294,20 +273,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/event': {
@@ -387,13 +352,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WrapRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/event/': {
       id: '/event/'
       path: '/'
@@ -429,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReleasesAdultRouteImport
       parentRoute: typeof ReleasesRoute
     }
+    '/releases/archive': {
+      id: '/releases/archive'
+      path: '/archive'
+      fullPath: '/releases/archive'
+      preLoaderRoute: typeof ReleasesArchiveRouteImport
+      parentRoute: typeof ReleasesRoute
+    }
     '/releases/minor': {
       id: '/releases/minor'
       path: '/minor'
@@ -438,17 +403,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
-}
-
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
-}
-
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface EventRouteChildren {
   EventCompetitionsRoute: typeof EventCompetitionsRoute
@@ -466,12 +420,14 @@ const EventRouteWithChildren = EventRoute._addFileChildren(EventRouteChildren)
 
 interface ReleasesRouteChildren {
   ReleasesAdultRoute: typeof ReleasesAdultRoute
+  ReleasesArchiveRoute: typeof ReleasesArchiveRoute
   ReleasesMinorRoute: typeof ReleasesMinorRoute
   ReleasesIndexRoute: typeof ReleasesIndexRoute
 }
 
 const ReleasesRouteChildren: ReleasesRouteChildren = {
   ReleasesAdultRoute: ReleasesAdultRoute,
+  ReleasesArchiveRoute: ReleasesArchiveRoute,
   ReleasesMinorRoute: ReleasesMinorRoute,
   ReleasesIndexRoute: ReleasesIndexRoute,
 }
@@ -482,8 +438,6 @@ const ReleasesRouteWithChildren = ReleasesRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AuthRoute: AuthRoute,
   EventRoute: EventRouteWithChildren,
   InterviewsRoute: InterviewsRoute,
   LogRoute: LogRoute,
@@ -499,13 +453,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
