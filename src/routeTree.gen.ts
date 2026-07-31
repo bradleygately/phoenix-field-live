@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as InterviewsRouteImport } from './routes/interviews'
 import { Route as LogRouteImport } from './routes/log'
 import { Route as TimelineRouteImport } from './routes/timeline'
+import { Route as WrapRouteImport } from './routes/wrap'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const TimelineRoute = TimelineRouteImport.update({
   path: '/timeline',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WrapRoute = WrapRouteImport.update({
+  id: '/wrap',
+  path: '/wrap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
   '/timeline': typeof TimelineRoute
+  '/wrap': typeof WrapRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
   '/timeline': typeof TimelineRoute
+  '/wrap': typeof WrapRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
   '/timeline': typeof TimelineRoute
+  '/wrap': typeof WrapRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/interviews' | '/log' | '/timeline'
+  fullPaths: '/' | '/interviews' | '/log' | '/timeline' | '/wrap'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/interviews' | '/log' | '/timeline'
-  id: '__root__' | '/' | '/interviews' | '/log' | '/timeline'
+  to: '/' | '/interviews' | '/log' | '/timeline' | '/wrap'
+  id: '__root__' | '/' | '/interviews' | '/log' | '/timeline' | '/wrap'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +76,7 @@ export interface RootRouteChildren {
   InterviewsRoute: typeof InterviewsRoute
   LogRoute: typeof LogRoute
   TimelineRoute: typeof TimelineRoute
+  WrapRoute: typeof WrapRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TimelineRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/wrap': {
+      id: '/wrap'
+      path: '/wrap'
+      fullPath: '/wrap'
+      preLoaderRoute: typeof WrapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   InterviewsRoute: InterviewsRoute,
   LogRoute: LogRoute,
   TimelineRoute: TimelineRoute,
+  WrapRoute: WrapRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
