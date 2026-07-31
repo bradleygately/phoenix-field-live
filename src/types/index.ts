@@ -208,6 +208,8 @@ export interface ItemNote {
   text: string;
   author: CrewId;
   at: number;
+  /** swiped right to keep — kept notes sort to the top */
+  kept?: boolean | undefined;
 }
 
 export interface CrewPosition {
