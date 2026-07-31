@@ -22,7 +22,7 @@ export function AgendaCard({
   const crew = assignedCrew(item);
 
   return (
-    <li
+    <div
       className={cn(
         "rounded-xl border bg-card p-3",
         tone === "now" ? "border-primary" : "border-border",
@@ -71,6 +71,6 @@ export function AgendaCard({
       <div className="mt-2.5">
         <StatusControls current={status} onSelect={onStatus} />
       </div>
-    </li>
+    </div>
   );
 }
