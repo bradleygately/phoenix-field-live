@@ -1,0 +1,86 @@
+import { createFileRoute } from "@tanstack/react-router";
+
+import { AppShell } from "@/components/AppShell";
+import { Panel, SectionLabel } from "@/components/primitives";
+import { useStore } from "@/state/store";
+
+export const Route = createFileRoute("/log")({
+  head: () => ({
+    meta: [
+      { title: "Log · PSI Games Crew Control" },
+      {
+        name: "description",
+        content:
+          "Chronological crew log of status changes, ops decisions and revertible program changes.",
+      },
+      { property: "og:title", content: "Log · PSI Games Crew Control" },
+      {
+        property: "og:description",
+        content:
+          "Chronological crew log of status changes, ops decisions and revertible program changes.",
+      },
+    ],
+  }),
+  component: LogScreen,
+});
+
+function LogScreen() {
+  const { crew, revertChange } = useStore();
+  const active = crew.changes.filter((c) => !c.reverted);
+
+  return (
+    <AppShell>
+      <Panel>
+        <SectionLabel>Revertible changes ({active.length})</SectionLabel>
+        {active.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            No official values are currently overridden.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {active.map((c) => (
+              <li key={c.id} className="rounded border border-border p-2 text-[11px]">
+                <p className="num text-[10px] text-muted-foreground uppercase">
+                  {c.field} · {c.editor}
+                </p>
+                <p className="mt-0.5">
+                  <span className="text-muted-foreground line-through">
+                    {c.officialValue || "—"}
+                  </span>{" "}
+                  → <span className="font-semibold text-primary">{c.currentValue}</span>
+                </p>
+                <p className="text-muted-foreground">{c.reason}</p>
+                <button
+                  type="button"
+                  onClick={() => revertChange(c.id)}
+                  className="tap mt-1 rounded border border-border px-2 text-[11px] font-semibold"
+                >
+                  Revert to official
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+
+      <Panel>
+        <SectionLabel>Activity log</SectionLabel>
+        {crew.log.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Nothing logged yet.</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {crew.log.map((entry) => (
+              <li key={entry.id} className="text-[11px]">
+                <span className="num mr-1 text-[10px] text-muted-foreground uppercase">
+                  {new Date(entry.at).toLocaleTimeString()} · {entry.kind} ·{" "}
+                  {entry.editor}
+                </span>
+                <span>{entry.text}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+    </AppShell>
+  );
+}
