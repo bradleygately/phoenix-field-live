@@ -20,6 +20,8 @@ export interface CharlotteNow {
   date: string;
   weekday: string;
   clock: string;
+  /** true between 06:00 and 18:59 Charlotte time */
+  isDay: boolean;
 }
 
 /** Charlotte wall-clock derived only from Intl parts — never device tz math. */
@@ -29,14 +31,15 @@ export function charlotteNow(epochMs: number): CharlotteNow {
   const hour = Number(get("hour")) % 24;
   const minute = Number(get("minute"));
   const second = Number(get("second"));
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
   return {
     min: hour * 60 + minute,
     seconds: second,
     date: `${get("year")}-${get("month")}-${get("day")}`,
     weekday: parts.find((p) => p.type === "weekday")?.value ?? "",
-    clock: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:${String(
-      second,
-    ).padStart(2, "0")}`,
+    clock: `${h12}:${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")} ${ampm}`,
+    isDay: hour >= 6 && hour < 19,
   };
 }
 

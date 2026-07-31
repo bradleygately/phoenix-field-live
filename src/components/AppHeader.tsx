@@ -1,5 +1,6 @@
 import { PhoenixMark } from "./primitives";
 import { DAY_LABELS } from "@/lib/time";
+import { cn } from "@/lib/utils";
 import { useStore } from "@/state/store";
 
 export function AppHeader() {
@@ -7,12 +8,24 @@ export function AppHeader() {
   const dayLabel = DAY_LABELS[now.date] ?? now.weekday;
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
+    <header
+      className={cn(
+        "sticky top-0 z-30 border-b backdrop-blur transition-colors duration-700",
+        now.isDay
+          ? "border-gold/40 bg-surface-2/95"
+          : "border-border bg-background/95",
+      )}
+    >
       <div className="flex items-center gap-2 px-3 py-2">
         <PhoenixMark />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="num truncate text-[13px] font-bold tracking-widest">
+            <span
+              className={cn(
+                "num truncate text-[13px] font-bold tracking-widest",
+                now.isDay ? "text-gold-bright" : "text-foreground",
+              )}
+            >
               PSI GAMES LIVE
             </span>
             {simOffsetMs !== 0 && (
@@ -25,7 +38,12 @@ export function AppHeader() {
             Mojo Phoenix · {dayLabel}
           </p>
         </div>
-        <span className="num shrink-0 text-base font-semibold tabular-nums">
+        <span
+          className={cn(
+            "num shrink-0 text-base font-semibold tabular-nums transition-colors duration-700",
+            now.isDay ? "text-gold-bright" : "text-muted-foreground",
+          )}
+        >
           {now.clock}
         </span>
       </div>
