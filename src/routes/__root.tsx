@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { registerAppServiceWorker, registerChunkErrorRecovery } from "../lib/pwa";
+import { THEME_BOOT_SCRIPT, ThemeProvider } from "../lib/theme";
 import { StoreProvider } from "../state/store";
 
 function NotFoundComponent() {
@@ -117,6 +118,7 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <HeadContent />
       </head>
       <body>
@@ -137,10 +139,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StoreProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-      </StoreProvider>
+      <ThemeProvider>
+        <StoreProvider>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </StoreProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
