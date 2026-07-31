@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { ChipRow, Field, Sheet, TextArea, TextInput } from "@/components/Sheet";
 import { TapButton } from "@/components/primitives";
+import { useRecorder } from "@/lib/recorder";
 import { useStore } from "@/state/store";
 import {
   ACCESS_STATUSES,
@@ -25,6 +26,7 @@ export function InterviewSheet({
   item: ScheduleItem | null;
 }) {
   const { upsertInterview, role, addLog } = useStore();
+  const recorder = useRecorder();
   const [target, setTarget] = useState("");
   const [location, setLocation] = useState(item?.room ?? "");
   const [angle, setAngle] = useState("");
@@ -60,8 +62,11 @@ export function InterviewSheet({
           onChange={(e) => setStart(e.target.checked)}
           className="h-5 w-5 accent-[oklch(0.78_0.15_75)]"
         />
-        Start the interview timer now
+        Record audio from the device mic as soon as I start
       </label>
+      {recorder.error && (
+        <p className="text-[11px] text-destructive">{recorder.error}</p>
+      )}
       {release !== "Signed" && release !== "Not Needed" && (
         <p className="text-[11px] text-destructive">
           Release not signed — do not publish this footage until Brad records it.
@@ -95,6 +100,7 @@ export function InterviewSheet({
             updatedAt: now,
           };
           upsertInterview(interview);
+          if (start) void recorder.start(interview.id);
           addLog({
             kind: "interview",
             itemId: item?.id,
@@ -105,7 +111,7 @@ export function InterviewSheet({
           onClose();
         }}
       >
-        Save interview
+        {start ? "● Start & record" : "Save interview"}
       </TapButton>
     </Sheet>
   );
