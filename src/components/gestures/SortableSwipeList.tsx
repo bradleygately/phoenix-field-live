@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
 const SWIPE_TRIGGER = 96;
 const HOLD_MS = 350;
+/** Finger slop allowed before a press-and-hold is treated as a swipe or scroll. */
+const HOLD_SLOP = 10;
 
 type Mode = "idle" | "swipe" | "drag" | "scroll";
 
@@ -16,6 +18,7 @@ interface RowProps {
   deleteLabel?: string;
   sortable?: boolean;
   dragging?: boolean;
+  dragOffset?: number;
   onDragStart?: ((id: string) => void) | undefined;
 }
 
@@ -33,6 +36,7 @@ export function SwipeRow({
   deleteLabel = "Delete",
   sortable = false,
   dragging = false,
+  dragOffset = 0,
   onDragStart,
 }: RowProps) {
   const [dx, setDx] = useState(0);
@@ -50,11 +54,14 @@ export function SwipeRow({
   return (
     <li
       data-row-id={id}
-      className={cn("relative touch-pan-y overflow-hidden rounded-lg", dragging && "z-10")}
+      className={cn("relative overflow-hidden rounded-lg", dragging && "z-20")}
+      style={{
+        touchAction: dragging ? "none" : "pan-y",
+        transform: dragging ? `translateY(${dragOffset}px)` : undefined,
+        transition: dragging ? "none" : "transform 140ms",
+      }}
       onPointerDown={(e) => {
         if (e.pointerType === "mouse" && e.button !== 0) return;
-        // Capture so a hold-drag keeps receiving moves once the finger leaves the row.
-        e.currentTarget.setPointerCapture?.(e.pointerId);
         start.current = { x: e.clientX, y: e.clientY };
         mode.current = "idle";
         if (sortable && onDragStart) {
@@ -71,7 +78,7 @@ export function SwipeRow({
         const ddy = e.clientY - start.current.y;
         if (mode.current === "drag") return;
         if (mode.current === "idle") {
-          if (Math.abs(ddy) > 10 && Math.abs(ddy) > Math.abs(ddx)) {
+          if (Math.abs(ddy) > HOLD_SLOP && Math.abs(ddy) > Math.abs(ddx)) {
             mode.current = "scroll";
             clearHold();
             return;
@@ -85,21 +92,20 @@ export function SwipeRow({
           setDx(onKeep ? ddx : Math.min(0, ddx));
         }
       }}
-      onPointerUp={(e) => {
-        e.currentTarget.releasePointerCapture?.(e.pointerId);
+      onPointerUp={() => {
         clearHold();
         if (mode.current === "swipe") {
           if (dx < -SWIPE_TRIGGER) onDelete?.();
           else if (dx > SWIPE_TRIGGER) onKeep?.();
         }
         setDx(0);
-        mode.current = "idle";
+        if (mode.current !== "drag") mode.current = "idle";
         start.current = null;
       }}
       onPointerCancel={() => {
         clearHold();
         setDx(0);
-        mode.current = "idle";
+        if (mode.current !== "drag") mode.current = "idle";
         start.current = null;
       }}
     >
