@@ -1,6 +1,38 @@
-# Release Export: One-Tap Send by Email or Text
+# Fix: Admin Login and Release Archive Access
 
-Goal: after a participant signs, the PDF goes out with one tap — emailed or texted to them (and optionally to the crew) — instead of the current generate → download link → hope-it-saved dance.
+## What's actually wrong (verified)
+
+- The backend has **zero user accounts** and **zero admin role records**, while 14 signed releases sit in the archive.
+- Your recent sign-up attempts were rejected because the password was flagged as too weak/common; the sign-in attempts then failed as "invalid credentials" because no account was ever created.
+- Even if the sign-up had succeeded, you still could not get in: admin access is granted by an admin-role record, and there is currently **no way for anyone to ever receive that record** — nothing in the app or database creates one. So the archive would have shown "not authorized" regardless of password.
+
+## The fix
+
+1. **Bootstrap the first admin.** A one-time, self-closing rule: if no admin exists yet, the first account created through a dedicated setup step becomes the admin automatically. Once one admin exists, that door closes permanently and only an existing admin can grant the role.
+2. **Add "Crew members" management** inside the admin console so you can promote Jesse or Duane later without touching anything technical.
+3. **Make sign-up survivable in the field.**
+   - Show the real reason a sign-up fails (weak password, email already used) instead of a generic error.
+   - Show password requirements up front with a strength meter, so you know before tapping Create.
+   - Sign in immediately after sign-up (no email-confirmation dead end that would strand you in a ballroom).
+4. **Clear access states on the archive.** Not signed in -> sign-in prompt. Signed in but not admin -> "Ask an admin to grant you access", with your account email shown. No more silent blank screen.
+5. **Password reset** link on the sign-in screen so a forgotten password does not lock you out of 14 signed releases.
+
+## Setup after the change
+
+You create the first admin account once (I'll point you at the exact screen). Use a long passphrase — the backend rejects common passwords. From then on the archive opens straight from More -> Admin.
+
+## Technical notes
+
+- Migration: a `SECURITY DEFINER` function plus an admin-only insert path for `user_roles`; bootstrap grant only when `count(admin) = 0`, executed server-side so the browser cannot claim the role. Existing `has_role` and RLS on `releases` stay untouched.
+- Role checks continue to read `user_roles` via `has_role`; roles are never stored on a profile.
+- Auth config: enable auto-confirm for email sign-up so first login works without an email round-trip, and surface GoTrue's 422 `weak_password` message in the UI.
+- Admin route stays under `_authenticated/` with the managed gate; the admin dashboard adds a role-check state instead of rendering an empty table.
+
+---
+
+# Previously proposed (still pending): Release Export — One-Tap Send by Email or Text
+
+Goal: after a participant signs, the PDF goes out with one tap — emailed or texted to them (and optionally to the crew) — instead of the current generate → download link → hope-it-saved dance. This follows the admin-access fix above.
 
 ## What changes for you in the field
 
