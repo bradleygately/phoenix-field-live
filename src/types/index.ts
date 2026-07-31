@@ -210,6 +210,8 @@ export interface CrewPosition {
 
 export interface CrewState {
   statuses: Record<string, Status>;
+  /** Multiple timestamped notes per schedule item. */
+  itemNotes: ItemNote[];
   changes: FieldChange[];
   log: LogEntry[];
   positions: { [K in CrewId]?: CrewPosition | undefined };
