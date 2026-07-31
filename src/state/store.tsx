@@ -314,6 +314,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  /** Manual agenda tile order set by dragging, persisted like everything else. */
+  const reorderAgenda = useCallback<StoreValue["reorderAgenda"]>((ids) => {
+    setCrew((prev) => {
+      const next = { ...(prev.agendaOrder ?? {}) };
+      ids.forEach((id, index) => {
+        next[id] = index;
+      });
+      return { ...prev, agendaOrder: next };
+    });
+  }, []);
+
   const reassign = useCallback<StoreValue["reassign"]>(
     ({ item, who, assignment, committed, reason, effective }) => {
       const officialAssignment = String(item[who] ?? "");
