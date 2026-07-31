@@ -196,6 +196,7 @@ export function SortableSwipeList<T>({
     };
     const end = () => {
       setDragId(null);
+      console.log("END", orderRef.current.join(","), typeof onReorder);
       onReorder?.(orderRef.current);
     };
     window.addEventListener("pointermove", move, { passive: false });
