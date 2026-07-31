@@ -57,6 +57,8 @@ export function SwipeRow({
       className={cn("relative touch-pan-y overflow-hidden rounded-lg", dragging && "z-10")}
       onPointerDown={(e) => {
         if (e.pointerType === "mouse" && e.button !== 0) return;
+        // Capture so a hold-drag keeps receiving moves once the finger leaves the row.
+        e.currentTarget.setPointerCapture?.(e.pointerId);
         start.current = { x: e.clientX, y: e.clientY };
         mode.current = "idle";
         if (sortable && onDragStart) {
@@ -90,7 +92,8 @@ export function SwipeRow({
           setDx(onKeep ? ddx : Math.min(0, ddx));
         }
       }}
-      onPointerUp={() => {
+      onPointerUp={(e) => {
+        e.currentTarget.releasePointerCapture?.(e.pointerId);
         clearHold();
         if (mode.current === "drag") onDragEnd?.();
         if (mode.current === "swipe") {
