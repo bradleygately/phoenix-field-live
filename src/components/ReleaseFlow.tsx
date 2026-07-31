@@ -550,16 +550,32 @@ function reviewRows(
 function Confirmation({ record }: { record: ReleaseRecord }) {
   const [busy, setBusy] = useState<"download" | "print" | null>(null);
   const [error, setError] = useState("");
+  const [ready, setReady] = useState<{ url: string; filename: string } | null>(null);
+  const [hint, setHint] = useState("");
 
   async function run(kind: "download" | "print") {
     setBusy(kind);
     setError("");
     try {
-      if (kind === "download") await downloadReleasePdf(record);
-      else await printReleasePdf(record);
+      const result =
+        kind === "download" ? await downloadReleasePdf(record) : await printReleasePdf(record);
+      setReady({ url: result.url, filename: result.filename });
+      setHint(
+        result.delivery === "downloaded"
+          ? "Saved to your downloads."
+          : result.delivery === "shared"
+            ? "Sent to your share sheet."
+            : result.delivery === "opened"
+              ? "Opened in a new tab — use your browser's share or save button."
+              : "Your browser blocked the automatic download. Use the link below to open or save the PDF.",
+      );
     } catch (err) {
       console.error("[release-pdf]", err);
-      setError("Could not build the PDF on this device. Try again, or use Print.");
+      setError(
+        err instanceof Error
+          ? `Could not build the PDF: ${err.message}`
+          : "Could not build the PDF on this device. Please try again.",
+      );
     } finally {
       setBusy(null);
     }
@@ -606,6 +622,20 @@ function Confirmation({ record }: { record: ReleaseRecord }) {
       {error && (
         <p className="mt-3 text-xs font-semibold text-destructive" role="alert">
           {error}
+        </p>
+      )}
+      {ready && !error && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          {hint}{" "}
+          <a
+            href={ready.url}
+            download={ready.filename}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-primary underline underline-offset-4"
+          >
+            Open {ready.filename}
+          </a>
         </p>
       )}
 

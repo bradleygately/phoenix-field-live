@@ -186,7 +186,24 @@ export async function generateReleasePdf(record: ReleaseRecord) {
   return doc;
 }
 
-function triggerBlobDownload(blob: Blob, filename: string) {
+export type PdfDelivery = "shared" | "downloaded" | "opened" | "link-only";
+
+function isIosLike() {
+  return (
+    /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
+function inIframe() {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
+function triggerBlobDownload(url: string, filename: string, blob: Blob): boolean {
   // Some mobile / in-app browsers ignore jsPDF's internal save(); drive the
   // download from a real object URL so the file always lands on the device.
   const nav = window.navigator as Navigator & {
@@ -194,10 +211,11 @@ function triggerBlobDownload(blob: Blob, filename: string) {
   };
   if (typeof nav.msSaveOrOpenBlob === "function") {
     nav.msSaveOrOpenBlob(blob, filename);
-    return;
+    return true;
   }
 
-  const url = URL.createObjectURL(blob);
+  if (!("download" in HTMLAnchorElement.prototype)) return false;
+
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
@@ -206,32 +224,60 @@ function triggerBlobDownload(blob: Blob, filename: string) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  return true;
+}
 
-  // iOS Safari does not honour the download attribute; open the PDF so the
-  // user can still save or share it from the viewer.
-  const supportsDownload = "download" in HTMLAnchorElement.prototype;
-  const isIos =
-    /iP(hone|ad|od)/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  if (!supportsDownload || isIos) window.open(url, "_blank");
+/**
+ * Produces the signed PDF and hands it to the device by whatever route this
+ * browser actually allows: native share sheet (iOS / Android), a real file
+ * download, or a new tab. Always returns a blob URL so the UI can render a
+ * tappable fallback link (embedded previews block programmatic downloads).
+ */
+export async function deliverReleasePdf(
+  record: ReleaseRecord,
+  mode: "download" | "print" = "download",
+): Promise<{ url: string; filename: string; delivery: PdfDelivery }> {
+  const blob = await releasePdfBlob(record);
+  const filename = `${record.releaseId}.pdf`;
+  const url = URL.createObjectURL(blob);
 
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  if (mode === "download") {
+    const file = new File([blob], filename, { type: "application/pdf" });
+    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+    if (typeof nav.share === "function" && nav.canShare?.({ files: [file] })) {
+      try {
+        await nav.share({ files: [file], title: filename });
+        return { url, filename, delivery: "shared" };
+      } catch (err) {
+        // User dismissed the sheet, or sharing is unavailable — fall through.
+        if ((err as DOMException)?.name === "AbortError") {
+          return { url, filename, delivery: "shared" };
+        }
+      }
+    }
+
+    // iOS Safari ignores the download attribute; open the viewer instead.
+    if (!isIosLike() && triggerBlobDownload(url, filename, blob)) {
+      return { url, filename, delivery: "downloaded" };
+    }
+  }
+
+  const win = window.open(url, "_blank", "noopener");
+  if (win) return { url, filename, delivery: "opened" };
+
+  // Popup blocked (common in embedded previews / in-app browsers).
+  if (!inIframe() && triggerBlobDownload(url, filename, blob)) {
+    return { url, filename, delivery: "downloaded" };
+  }
+  return { url, filename, delivery: "link-only" };
 }
 
 export async function downloadReleasePdf(record: ReleaseRecord) {
-  const blob = await releasePdfBlob(record);
-  triggerBlobDownload(blob, `${record.releaseId}.pdf`);
+  return deliverReleasePdf(record, "download");
 }
 
 export async function printReleasePdf(record: ReleaseRecord) {
-  const blob = await releasePdfBlob(record);
-  const url = URL.createObjectURL(blob);
-  const win = window.open(url, "_blank");
-  if (!win) {
-    // Popup blocked (common inside kiosk / in-app browsers): fall back to a download.
-    triggerBlobDownload(blob, `${record.releaseId}.pdf`);
-  }
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return deliverReleasePdf(record, "print");
 }
 
 export async function releasePdfBlob(record: ReleaseRecord): Promise<Blob> {
