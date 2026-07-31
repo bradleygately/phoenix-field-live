@@ -72,6 +72,9 @@ interface StoreValue {
   keepItemNote: (noteId: string) => void;
   restoreItemNote: (note: ItemNote) => void;
   reorderItemNotes: (ids: string[]) => void;
+  /** Manual agenda tile order (drag to reorder within a section). */
+  agendaOrder: Record<string, number>;
+  reorderAgenda: (ids: string[]) => void;
   reassign: (input: {
     item: ScheduleItem;
     who: CrewId;
