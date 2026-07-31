@@ -2,7 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
-import { SectionLabel, PriorityPill } from "@/components/primitives";
+import { EmptyState, SectionLabel, PriorityPill } from "@/components/primitives";
 import { ItemSheet } from "@/components/agenda/ItemSheet";
 import { TextInput } from "@/components/Sheet";
 import {
@@ -158,9 +158,12 @@ function SearchScreen() {
           Type to search schedule blocks, interviews, speakers, competitions and notes.
         </p>
       ) : total === 0 ? (
-        <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-          No matches for “{query}”.
-        </p>
+        <EmptyState
+          title={`No matches for “${query}”`}
+          body="Try a shorter term, a room name, or a crew member. Filters above narrow results by type."
+          actionLabel={group === "all" ? undefined : "Search all types"}
+          onAction={group === "all" ? undefined : () => setGroup("all")}
+        />
       ) : (
         <p className="num text-[11px] text-muted-foreground">
           {total} result{total === 1 ? "" : "s"}
