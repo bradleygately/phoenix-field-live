@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { Search } from "lucide-react";
 
 import { PhoenixMark } from "./primitives";
 import { DAY_LABELS } from "@/lib/time";
@@ -53,6 +55,13 @@ export function AppHeader() {
         >
           {mounted ? now.clock : ""}
         </span>
+        <Link
+          to="/search"
+          aria-label="Search events, speakers and interviews"
+          className="tap flex shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-foreground"
+        >
+          <Search className="h-4 w-4" aria-hidden="true" />
+        </Link>
         <button
           type="button"
           onClick={toggle}
