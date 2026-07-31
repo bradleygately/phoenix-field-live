@@ -66,7 +66,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<CrewId>("jesse");
   const [crew, setCrew] = useState<CrewState>(EMPTY_CREW_STATE);
   const [settings, setSettings] = useState<TravelSettings>(DEFAULT_SETTINGS);
-  const [simOffsetMs, setSimOffsetMs] = useState(0);
+  const [simOffsetMs, setSimOffsetMsState] = useState(0);
   const [tick, setTick] = useState(() => Date.now());
   const loaded = useRef(false);
 
@@ -91,8 +91,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [crew, settings]);
 
   useEffect(() => {
+    const stored = window.sessionStorage.getItem("psi-sim-offset");
+    if (stored) setSimOffsetMsState(Number(stored) || 0);
     const id = window.setInterval(() => setTick(Date.now()), 1000);
     return () => window.clearInterval(id);
+  }, []);
+
+  const setSimOffsetMs = useCallback((ms: number) => {
+    setSimOffsetMsState(ms);
+    window.sessionStorage.setItem("psi-sim-offset", String(ms));
   }, []);
 
   const epochMs = tick + simOffsetMs;
