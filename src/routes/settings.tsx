@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { Panel, SectionLabel, TapButton } from "@/components/primitives";
+import { useTheme, type ThemePref } from "@/lib/theme";
 import { SETTINGS_FIELDS } from "@/lib/settings";
 import { estimateTravel } from "@/lib/travel";
 import { formatMin, offsetForTargetMin, parseTimeInput } from "@/lib/time";
@@ -52,6 +53,10 @@ function SettingsScreen() {
 
   return (
     <AppShell>
+      <Panel className="space-y-2">
+        <SectionLabel>Appearance</SectionLabel>
+        <ThemePicker />
+      </Panel>
       <Panel className="space-y-2">
         <SectionLabel>Time simulator</SectionLabel>
         <p className="num text-xs">
