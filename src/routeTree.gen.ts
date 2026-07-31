@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InterviewsRouteImport } from './routes/interviews'
 import { Route as LogRouteImport } from './routes/log'
+import { Route as MapRouteImport } from './routes/map'
 import { Route as MoreRouteImport } from './routes/more'
 import { Route as NotesRouteImport } from './routes/notes'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -31,6 +32,11 @@ const InterviewsRoute = InterviewsRouteImport.update({
 const LogRoute = LogRouteImport.update({
   id: '/log',
   path: '/log',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MoreRoute = MoreRouteImport.update({
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
+  '/map': typeof MapRoute
   '/more': typeof MoreRoute
   '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
+  '/map': typeof MapRoute
   '/more': typeof MoreRoute
   '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
+  '/map': typeof MapRoute
   '/more': typeof MoreRoute
   '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/interviews'
     | '/log'
+    | '/map'
     | '/more'
     | '/notes'
     | '/settings'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/interviews'
     | '/log'
+    | '/map'
     | '/more'
     | '/notes'
     | '/settings'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/interviews'
     | '/log'
+    | '/map'
     | '/more'
     | '/notes'
     | '/settings'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   InterviewsRoute: typeof InterviewsRoute
   LogRoute: typeof LogRoute
+  MapRoute: typeof MapRoute
   MoreRoute: typeof MoreRoute
   NotesRoute: typeof NotesRoute
   SettingsRoute: typeof SettingsRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/log'
       fullPath: '/log'
       preLoaderRoute: typeof LogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/more': {
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   InterviewsRoute: InterviewsRoute,
   LogRoute: LogRoute,
+  MapRoute: MapRoute,
   MoreRoute: MoreRoute,
   NotesRoute: NotesRoute,
   SettingsRoute: SettingsRoute,
