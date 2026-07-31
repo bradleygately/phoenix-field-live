@@ -26,6 +26,8 @@ export const Route = createFileRoute("/more")({
 
 const LINKS = [
   { to: "/search", label: "Search", hint: "Events, speakers, interviews, notes" },
+  { to: "/releases", label: "Media releases", hint: "Adult & minor release signing (hand the phone over)" },
+  { to: "/admin", label: "Release console", hint: "Signed releases, PDFs, CSV export, QR signage" },
   { to: "/event", label: "Event info: PSI Games", hint: "Speakers, competitions, tickets, venue spaces" },
   { to: "/map", label: "Map: venue & hotels", hint: "Westin, JW, Element, Home2 + walk times" },
   { to: "/timeline", label: "Timeline & warnings", hint: "Crew lanes, conflicts, travel gaps" },
