@@ -136,9 +136,10 @@ function LiveScreen() {
       )}
 
       <QuickActions
-        onAction={(kind, text) =>
-          addLog(lead ? { kind, text, itemId: lead.id } : { kind, text })
-        }
+        item={lead}
+        candidates={running.length > 0 ? running : items.filter((i) => i.endMin > now.min).slice(0, 6)}
+        fromRoom={currentRoom}
+        clock={now.clock}
       />
 
       {also.length > 0 && (
