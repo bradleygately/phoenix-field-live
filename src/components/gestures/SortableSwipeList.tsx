@@ -95,6 +95,7 @@ export function SwipeRow({
       onPointerUp={(e) => {
         e.currentTarget.releasePointerCapture?.(e.pointerId);
         clearHold();
+        console.log("UP mode", mode.current);
         if (mode.current === "drag") onDragEnd?.();
         if (mode.current === "swipe") {
           if (dx < -SWIPE_TRIGGER) onDelete?.();
@@ -206,6 +207,7 @@ export function SortableSwipeList<T>({
             onDragOver={(dragged, y) => moveOver(dragged, y)}
             onDragEnd={() => {
               setDragId(null);
+              console.log("REORDER", order.join(","));
               onReorder?.(order);
             }}
             onDelete={onDelete ? () => onDelete(item) : undefined}
