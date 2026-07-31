@@ -10,20 +10,38 @@ import {
 } from "react";
 
 import { SCHEDULE } from "@/data/schedule";
-import { EMPTY_PERSISTED, repository, type PersistedState } from "@/lib/repository";
+import {
+  EMPTY_PERSISTED,
+  INITIAL_CREW_STATE,
+  repository,
+  type PersistedState,
+} from "@/lib/repository";
 import { DEFAULT_SETTINGS, type TravelSettings } from "@/lib/settings";
 import { charlotteNow, type CharlotteNow } from "@/lib/time";
 import {
-  EMPTY_CREW_STATE,
+  canSetCardState,
+  type CardState,
   type CrewId,
   type CrewState,
   type FieldChange,
+  type GearIssue,
+  type Interview,
   type LogEntry,
+  type MediaCard,
   type ScheduleItem,
   type Status,
+  type SyncState,
+  type WrapDay,
 } from "@/types";
 
 export const MANUAL_POSITION_TTL_MIN = 90;
+
+export const EMPTY_WRAP_DAY: WrapDay = {
+  checks: {},
+  nextCall: "",
+  firstAssignment: "",
+  notes: "",
+};
 
 interface StoreValue {
   ready: boolean;
@@ -47,6 +65,26 @@ interface StoreValue {
   setPosition: (crew: CrewId, room: string) => void;
   clearPosition: (crew: CrewId) => void;
   setNote: (itemId: string, note: string) => void;
+  reassign: (input: {
+    item: ScheduleItem;
+    who: CrewId;
+    assignment: string;
+    committed: boolean;
+    reason: string;
+    effective: string;
+  }) => void;
+  upsertInterview: (interview: Interview) => void;
+  patchInterview: (id: string, patch: Partial<Interview>, note?: string) => void;
+  toggleInterviewTimer: (id: string) => void;
+  upsertCard: (card: MediaCard) => void;
+  setCardState: (id: string, state: CardState) => boolean;
+  addGear: (issue: Omit<GearIssue, "id" | "at" | "resolved">) => void;
+  resolveGear: (id: string) => void;
+  setWrap: (date: string, patch: Partial<WrapDay>) => void;
+  toggleWrapCheck: (date: string, key: string) => void;
+  wrapFor: (date: string) => WrapDay;
+  syncState: SyncState;
+  online: boolean;
   now: CharlotteNow;
   epochMs: number;
   simOffsetMs: number;
@@ -64,10 +102,11 @@ function uid(): string {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [role, setRole] = useState<CrewId>("jesse");
-  const [crew, setCrew] = useState<CrewState>(EMPTY_CREW_STATE);
+  const [crew, setCrew] = useState<CrewState>(INITIAL_CREW_STATE);
   const [settings, setSettings] = useState<TravelSettings>(DEFAULT_SETTINGS);
   const [simOffsetMs, setSimOffsetMsState] = useState(0);
   const [tick, setTick] = useState(() => Date.now());
+  const [online, setOnline] = useState(true);
   const loaded = useRef(false);
 
   useEffect(() => {
@@ -94,7 +133,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const stored = window.sessionStorage.getItem("psi-sim-offset");
     if (stored) setSimOffsetMsState(Number(stored) || 0);
     const id = window.setInterval(() => setTick(Date.now()), 1000);
-    return () => window.clearInterval(id);
+    const sync = () => setOnline(window.navigator.onLine);
+    sync();
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+    };
   }, []);
 
   const setSimOffsetMs = useCallback((ms: number) => {
@@ -190,6 +237,193 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCrew((prev) => ({ ...prev, notes: { ...prev.notes, [itemId]: note } }));
   }, []);
 
+  /** Offline edits are queued visibly and never silently dropped. */
+  const enqueue = useCallback((summary: string) => {
+    if (typeof window !== "undefined" && window.navigator.onLine) return;
+    setCrew((prev) => ({
+      ...prev,
+      queue: [...prev.queue, { id: uid(), at: Date.now(), summary }].slice(-200),
+    }));
+  }, []);
+
+  const reassign = useCallback<StoreValue["reassign"]>(
+    ({ item, who, assignment, committed, reason, effective }) => {
+      const officialAssignment = String(item[who] ?? "");
+      const now = Date.now();
+      const changes: FieldChange[] = [
+        {
+          id: uid(),
+          itemId: item.id,
+          field: who,
+          officialValue: officialAssignment,
+          currentValue: assignment,
+          editor: role,
+          at: now,
+          reason,
+        },
+        {
+          id: uid(),
+          itemId: item.id,
+          field: `commit.${who}`,
+          officialValue: String(item.commit[who]),
+          currentValue: String(committed),
+          editor: role,
+          at: now,
+          reason,
+        },
+      ];
+      setCrew((prev) => ({ ...prev, changes: [...changes, ...prev.changes] }));
+      addLog({
+        kind: "reassign",
+        itemId: item.id,
+        text: `${cap(who)} → ${assignment} (${committed ? "COMMITTED" : "advisory"}) from ${effective || "now"} — ${reason}`,
+        meta: { who, committed: String(committed), effective },
+      });
+      enqueue(`Reassign ${who} on ${item.title}`);
+    },
+    [addLog, enqueue, role],
+  );
+
+  const upsertInterview = useCallback<StoreValue["upsertInterview"]>((interview) => {
+    setCrew((prev) => {
+      const exists = prev.interviews.some((i) => i.id === interview.id);
+      const next = { ...interview, updatedAt: Date.now() };
+      return {
+        ...prev,
+        interviews: exists
+          ? prev.interviews.map((i) => (i.id === interview.id ? next : i))
+          : [next, ...prev.interviews],
+      };
+    });
+  }, []);
+
+  const patchInterview = useCallback<StoreValue["patchInterview"]>(
+    (id, patch, note) => {
+      let label = "";
+      setCrew((prev) => ({
+        ...prev,
+        interviews: prev.interviews.map((i) => {
+          if (i.id !== id) return i;
+          label = i.target;
+          return { ...i, ...patch, updatedAt: Date.now() };
+        }),
+      }));
+      if (note) addLog({ kind: "interview", text: `${label || "Interview"}: ${note}` });
+      enqueue(`Interview update: ${label}`);
+    },
+    [addLog, enqueue],
+  );
+
+  const toggleInterviewTimer = useCallback<StoreValue["toggleInterviewTimer"]>(
+    (id) => {
+      let note = "";
+      setCrew((prev) => ({
+        ...prev,
+        interviews: prev.interviews.map((i) => {
+          if (i.id !== id) return i;
+          const now = Date.now();
+          if (i.runningSince) {
+            note = `stopped timer (${Math.round((now - i.runningSince) / 1000)}s)`;
+            return {
+              ...i,
+              runningSince: null,
+              elapsedMs: i.elapsedMs + (now - i.runningSince),
+              status: "Recorded",
+              updatedAt: now,
+            };
+          }
+          note = "started timer";
+          return { ...i, runningSince: now, status: "Recording", updatedAt: now };
+        }),
+      }));
+      const target = crew.interviews.find((i) => i.id === id)?.target ?? "Interview";
+      addLog({ kind: "interview", text: `${target} ${note}` });
+    },
+    [addLog, crew.interviews],
+  );
+
+  const upsertCard = useCallback<StoreValue["upsertCard"]>(
+    (card) => {
+      setCrew((prev) => {
+        const exists = prev.cards.some((c) => c.id === card.id);
+        const next = { ...card, updatedAt: Date.now() };
+        return {
+          ...prev,
+          cards: exists
+            ? prev.cards.map((c) => (c.id === card.id ? next : c))
+            : [next, ...prev.cards],
+        };
+      });
+      addLog({
+        kind: "card",
+        text: `Card ${card.cardId} → ${card.state} (${card.holder})`,
+        meta: { cardId: card.cardId, state: card.state },
+      });
+    },
+    [addLog],
+  );
+
+  const setCardState = useCallback<StoreValue["setCardState"]>(
+    (id, state) => {
+      const card = crew.cards.find((c) => c.id === id);
+      if (!card) return false;
+      if (!canSetCardState(card.state, state)) return false;
+      setCrew((prev) => ({
+        ...prev,
+        cards: prev.cards.map((c) =>
+          c.id === id ? { ...c, state, updatedAt: Date.now() } : c,
+        ),
+      }));
+      addLog({ kind: "card", text: `Card ${card.cardId}: ${card.state} → ${state}` });
+      return true;
+    },
+    [addLog, crew.cards],
+  );
+
+  const addGear = useCallback<StoreValue["addGear"]>(
+    (issue) => {
+      setCrew((prev) => ({
+        ...prev,
+        gear: [
+          { ...issue, id: uid(), at: Date.now(), resolved: false },
+          ...prev.gear,
+        ].slice(0, 200),
+      }));
+      addLog({ kind: "gear", text: `${issue.kind}: ${issue.text} (${issue.holder})` });
+    },
+    [addLog],
+  );
+
+  const resolveGear = useCallback<StoreValue["resolveGear"]>((id) => {
+    setCrew((prev) => ({
+      ...prev,
+      gear: prev.gear.map((g) => (g.id === id ? { ...g, resolved: true } : g)),
+    }));
+  }, []);
+
+  const setWrap = useCallback<StoreValue["setWrap"]>((date, patch) => {
+    setCrew((prev) => ({
+      ...prev,
+      wrap: {
+        ...prev.wrap,
+        [date]: { ...EMPTY_WRAP_DAY, ...(prev.wrap[date] ?? {}), ...patch },
+      },
+    }));
+  }, []);
+
+  const toggleWrapCheck = useCallback<StoreValue["toggleWrapCheck"]>((date, key) => {
+    setCrew((prev) => {
+      const day = prev.wrap[date] ?? EMPTY_WRAP_DAY;
+      return {
+        ...prev,
+        wrap: {
+          ...prev.wrap,
+          [date]: { ...day, checks: { ...day.checks, [key]: !day.checks[key] } },
+        },
+      };
+    });
+  }, []);
+
   /** Official values are never overwritten: overrides are layered on read. */
   const schedule = useMemo(() => {
     const active = crew.changes.filter((c) => !c.reverted);
@@ -197,13 +431,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return SCHEDULE.map((item) => {
       const mine = active.filter((c) => c.itemId === item.id);
       if (mine.length === 0) return item;
-      const next = { ...item };
+      const next = { ...item, commit: { ...item.commit } };
       for (const c of [...mine].reverse()) {
-        (next as unknown as Record<string, unknown>)[c.field] = c.currentValue;
+        if (c.field.startsWith("commit.")) {
+          const who = c.field.slice(7) as CrewId;
+          next.commit[who] = c.currentValue === "true";
+        } else {
+          (next as unknown as Record<string, unknown>)[c.field] = c.currentValue;
+        }
       }
       return next;
     });
   }, [crew.changes]);
+
+  const syncState: SyncState = !online
+    ? "local"
+    : crew.queue.length > 0
+      ? "syncing"
+      : "local";
 
   const value: StoreValue = {
     ready,
@@ -222,6 +467,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setPosition,
     clearPosition,
     setNote,
+    reassign,
+    upsertInterview,
+    patchInterview,
+    toggleInterviewTimer,
+    upsertCard,
+    setCardState,
+    addGear,
+    resolveGear,
+    setWrap,
+    toggleWrapCheck,
+    wrapFor: (date) => crew.wrap[date] ?? EMPTY_WRAP_DAY,
+    syncState,
+    online,
     now,
     epochMs,
     simOffsetMs,
@@ -230,7 +488,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     importState: (json) => {
       try {
         const parsed = JSON.parse(json) as Partial<PersistedState>;
-        setCrew({ ...EMPTY_CREW_STATE, ...(parsed.crew ?? {}) });
+        setCrew({ ...INITIAL_CREW_STATE, ...(parsed.crew ?? {}) });
         setSettings({ ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) });
         return true;
       } catch {
@@ -240,6 +498,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
+}
+
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export function useStore(): StoreValue {
