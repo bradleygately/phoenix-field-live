@@ -151,6 +151,9 @@ export interface Interview {
   runningSince: number | null;
   elapsedMs: number;
   updatedAt: number;
+  /** IndexedDB key of the saved audio take, when one exists */
+  recordingKey?: string | undefined;
+  recordingMs?: number | undefined;
 }
 
 /* ------------------------------ gear / media ----------------------------- */
@@ -208,6 +211,8 @@ export interface ItemNote {
   text: string;
   author: CrewId;
   at: number;
+  /** swiped right to keep — kept notes sort to the top */
+  kept?: boolean | undefined;
 }
 
 export interface CrewPosition {

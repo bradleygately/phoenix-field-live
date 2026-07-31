@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { TextArea } from "@/components/Sheet";
+import { SortableSwipeList } from "@/components/gestures/SortableSwipeList";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/state/store";
 import type { ItemNote } from "@/types";
@@ -9,54 +10,9 @@ function timeLabel(at: number): string {
   return new Date(at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
-/** Swipe left (or press Delete) to discard; an undo bar keeps it non-destructive. */
-function NoteRow({ note, onDelete }: { note: ItemNote; onDelete: () => void }) {
-  const [dx, setDx] = useState(0);
-  const start = useRef<number | null>(null);
-
-  return (
-    <li className="relative overflow-hidden rounded-lg">
-      <div className="absolute inset-0 flex items-center justify-end rounded-lg bg-destructive px-3 text-[11px] font-bold text-destructive-foreground uppercase">
-        Discard
-      </div>
-      <div
-        className="relative rounded-lg border border-border bg-card p-2.5"
-        style={{ transform: `translateX(${dx}px)`, touchAction: "pan-y" }}
-        onTouchStart={(e) => {
-          start.current = e.touches[0]?.clientX ?? null;
-        }}
-        onTouchMove={(e) => {
-          if (start.current === null) return;
-          const delta = (e.touches[0]?.clientX ?? 0) - start.current;
-          setDx(Math.min(0, delta));
-        }}
-        onTouchEnd={() => {
-          if (dx < -96) onDelete();
-          setDx(0);
-          start.current = null;
-        }}
-      >
-        <div className="flex items-start gap-2">
-          <p className="min-w-0 flex-1 text-xs whitespace-pre-wrap">{note.text}</p>
-          <button
-            type="button"
-            aria-label="Delete note"
-            onClick={onDelete}
-            className="shrink-0 rounded-md border border-border px-2 py-1 text-[10px] font-semibold text-muted-foreground"
-          >
-            ✕
-          </button>
-        </div>
-        <p className="num mt-1 text-[10px] text-muted-foreground uppercase">
-          {note.author} · {timeLabel(note.at)}
-        </p>
-      </div>
-    </li>
-  );
-}
-
 export function ItemNotes({ itemId }: { itemId: string }) {
-  const { itemNotesFor, addItemNote, deleteItemNote, restoreItemNote } = useStore();
+  const { itemNotesFor, addItemNote, deleteItemNote, keepItemNote, restoreItemNote } =
+    useStore();
   const notes = itemNotesFor(itemId);
   const [draft, setDraft] = useState("");
   const [saved, setSaved] = useState(false);
@@ -135,18 +91,32 @@ export function ItemNotes({ itemId }: { itemId: string }) {
       )}
 
       {notes.length > 0 && (
-        <ul className="space-y-1.5">
-          {notes.map((note) => (
-            <NoteRow
-              key={note.id}
-              note={note}
-              onDelete={() => {
-                deleteItemNote(note.id);
-                setUndo(note);
-              }}
-            />
-          ))}
-        </ul>
+        <SortableSwipeList
+          items={notes}
+          getId={(n) => n.id}
+          keepLabel="Keep"
+          deleteLabel="Discard"
+          onKeep={(n) => keepItemNote(n.id)}
+          onDelete={(n) => {
+            deleteItemNote(n.id);
+            setUndo(n);
+          }}
+          className="space-y-1.5"
+          renderItem={(note) => (
+            <div
+              className={cn(
+                "rounded-lg border bg-card p-2.5",
+                note.kept ? "border-ok" : "border-border",
+              )}
+            >
+              <p className="min-w-0 text-xs whitespace-pre-wrap">{note.text}</p>
+              <p className="num mt-1 text-[10px] text-muted-foreground uppercase">
+                {note.author} · {timeLabel(note.at)}
+                {note.kept ? " · kept" : ""}
+              </p>
+            </div>
+          )}
+        />
       )}
     </div>
   );
