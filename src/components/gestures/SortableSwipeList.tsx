@@ -3,7 +3,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 const SWIPE_TRIGGER = 96;
-if (typeof window !== "undefined") (window as any).__mod = "v2";
 const HOLD_MS = 350;
 
 type Mode = "idle" | "swipe" | "drag" | "scroll";
@@ -190,7 +189,6 @@ export function SortableSwipeList<T>({
   // Drag tracking lives on the window: reordering moves the row's DOM node, which
   // would otherwise drop the pointer capture mid-drag.
   useEffect(() => {
-    (window as any).__eff = ((window as any).__eff||0)+1;
     if (!dragId) return;
     const move = (e: PointerEvent) => {
       e.preventDefault();
@@ -198,14 +196,12 @@ export function SortableSwipeList<T>({
     };
     const end = () => {
       setDragId(null);
-      console.log("END", orderRef.current.join(","), typeof onReorder);
       onReorder?.(orderRef.current);
     };
     window.addEventListener("pointermove", move, { passive: false });
     window.addEventListener("pointerup", end);
     window.addEventListener("pointercancel", end);
     return () => {
-      console.log("CLEANUP", dragId);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
