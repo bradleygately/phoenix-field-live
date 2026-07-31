@@ -5,16 +5,15 @@ import { BottomNav } from "./BottomNav";
 
 export function AppShell({
   children,
-  warningCount,
-  onWarnings,
 }: {
   children: ReactNode;
+  /** accepted for backwards compatibility, no longer rendered */
   warningCount?: number | undefined;
   onWarnings?: (() => void) | undefined;
 }) {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[560px] flex-col bg-background">
-      <AppHeader warningCount={warningCount} onWarnings={onWarnings} />
+      <AppHeader />
       <main className="flex-1 space-y-3 px-3 pt-3 pb-24">{children}</main>
       <BottomNav />
     </div>

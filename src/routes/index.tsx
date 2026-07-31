@@ -2,209 +2,174 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
-import { Panel, PriorityPill, RoomPill, SectionLabel } from "@/components/primitives";
-import { CrewStrip } from "@/components/live/CrewStrip";
-import { ItemRow } from "@/components/live/ItemRow";
-import { LeaveByCard } from "@/components/live/LeaveByCard";
-import { NowCard } from "@/components/live/NowCard";
-import { QuickActions } from "@/components/live/QuickActions";
-import { StatusButtons } from "@/components/live/StatusButtons";
-import {
-  computeLeaveBy,
-  computeWarnings,
-  itemsForDate,
-  nextForRole,
-  nextItem,
-  pickLead,
-  positionOf,
-  runningNow,
-} from "@/lib/live";
-import { formatDuration } from "@/lib/time";
+import { SectionLabel } from "@/components/primitives";
+import { AgendaCard } from "@/components/agenda/AgendaCard";
+import { ItemSheet } from "@/components/agenda/ItemSheet";
+import { CREW_LABEL, matchesCrew, type CrewFilter } from "@/components/agenda/agenda";
+import { cn } from "@/lib/utils";
+import { itemsForDate } from "@/lib/live";
+import { DAY_LABELS, EVENT_DATES, formatDuration } from "@/lib/time";
 import { useStore } from "@/state/store";
-import { EVENT_DATES } from "@/lib/time";
+import { CREW_IDS, type ScheduleItem } from "@/types";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Live · PSI Games Crew Control" },
+      { title: "Agenda · PSI Games Crew" },
       {
         name: "description",
         content:
-          "The current block, leave-by countdowns and crew positions for the Mojo Phoenix crew at PSI Games 2026.",
+          "Simple mobile agenda for the Mojo Phoenix crew at PSI Games 2026: now, next and later today with rooms, crew and status.",
       },
-      { property: "og:title", content: "Live · PSI Games Crew Control" },
+      { property: "og:title", content: "Agenda · PSI Games Crew" },
       {
         property: "og:description",
         content:
-          "The current block, leave-by countdowns and crew positions for the Mojo Phoenix crew at PSI Games 2026.",
+          "Now, next and later today for the Mojo Phoenix crew at PSI Games 2026.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: LiveScreen,
+  component: AgendaScreen,
 });
 
-function LiveScreen() {
-  const { schedule, role, now, crew, statusOf, setStatus, addLog, settings, epochMs } =
-    useStore();
-  const [showWarnings, setShowWarnings] = useState(false);
-  const [focusId, setFocusId] = useState<string | null>(null);
+const DAY_TABS = [
+  { date: EVENT_DATES[0]!, label: "Fri" },
+  { date: EVENT_DATES[1]!, label: "Sat" },
+  { date: EVENT_DATES[2]!, label: "Sun" },
+];
 
-  const date = EVENT_DATES.includes(now.date) ? now.date : EVENT_DATES[0]!;
-  const items = useMemo(() => itemsForDate(schedule, date), [schedule, date]);
-  const running = runningNow(items, now.min);
-  const autoLead = pickLead(running, role);
-  const lead = running.find((i) => i.id === focusId) ?? autoLead;
-  const also = running.filter((i) => i.id !== lead?.id);
-  const upcoming = nextItem(items, now.min);
-  const warnings = useMemo(
-    () => computeWarnings(items, crew, now.min, settings),
-    [items, crew, now.min, settings],
+const FILTERS: CrewFilter[] = ["all", ...CREW_IDS];
+
+function AgendaScreen() {
+  const { schedule, now, setRole, statusOf, setStatus } = useStore();
+  const today = EVENT_DATES.includes(now.date) ? now.date : EVENT_DATES[0]!;
+  const [date, setDate] = useState(today);
+  const [filter, setFilter] = useState<CrewFilter>("all");
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const items = useMemo(
+    () => itemsForDate(schedule, date).filter((i) => matchesCrew(i, filter)),
+    [schedule, date, filter],
   );
 
-  const myPosition = positionOf(crew, role, items, now.min, epochMs);
-  const currentRoom =
-    myPosition.room !== "Unknown" ? myPosition.room : (lead?.room ?? "Westin Lobby");
-  const leavePlan = computeLeaveBy(items, role, currentRoom, now.min, settings);
+  const isToday = date === today;
+  const nowItems = isToday
+    ? items.filter((i) => now.min >= i.startMin && now.min < i.endMin)
+    : [];
+  const future = isToday ? items.filter((i) => i.startMin > now.min) : items;
+  const nextItems = future.slice(0, isToday ? 2 : 3);
+  const laterItems = future.slice(nextItems.length);
+  const past = isToday ? items.filter((i) => i.endMin <= now.min) : [];
 
-  const nextThree = nextForRole(items, role, now.min, 3);
-  const nextThreeIds = new Set(nextThree.map((i) => i.id));
-  const rest = items.filter(
-    (i) => i.endMin > now.min && !nextThreeIds.has(i.id) && i.id !== lead?.id,
+  const open = items.find((i) => i.id === openId) ?? null;
+
+  const renderList = (list: ScheduleItem[], tone?: "now") => (
+    <ul className="space-y-2">
+      {list.map((item) => (
+        <AgendaCard
+          key={item.id}
+          item={item}
+          filter={filter}
+          tone={tone ?? "default"}
+          status={statusOf(item.id)}
+          onStatus={(s) => setStatus(item.id, s)}
+          onOpen={() => setOpenId(item.id)}
+        />
+      ))}
+    </ul>
   );
 
   return (
-    <AppShell
-      warningCount={warnings.length}
-      onWarnings={() => setShowWarnings((v) => !v)}
-    >
-      {showWarnings && (
-        <Panel tone={warnings.length ? "alert" : "default"}>
-          <SectionLabel>Warnings</SectionLabel>
-          {warnings.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No conflicts detected.</p>
-          ) : (
-            <ul className="space-y-1 text-[11px]">
-              {warnings.map((w) => (
-                <li
-                  key={w.id}
-                  className={
-                    w.level === "critical" ? "text-destructive" : "text-primary"
-                  }
-                >
-                  {w.text}
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
-      )}
+    <AppShell>
+      <div className="grid grid-cols-3 gap-1.5">
+        {DAY_TABS.map((tab) => (
+          <button
+            key={tab.date}
+            type="button"
+            onClick={() => setDate(tab.date)}
+            className={cn(
+              "min-h-11 rounded-md border text-xs font-semibold",
+              date === tab.date
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-secondary text-muted-foreground",
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {lead ? (
-        <>
-          <NowCard
-            item={lead}
-            role={role}
-            min={now.min}
-            seconds={now.seconds}
-            status={statusOf(lead.id)}
-          />
-          <StatusButtons
-            current={statusOf(lead.id)}
-            onSelect={(status) => setStatus(lead.id, status)}
-          />
-        </>
-      ) : (
-        <Panel className="space-y-1">
-          <SectionLabel>No scheduled block</SectionLabel>
-          {upcoming ? (
-            <>
-              <p className="text-sm font-semibold">
-                Next: {upcoming.title}
-              </p>
-              <p className="num text-xs text-muted-foreground">
-                {upcoming.startLabel} · {upcoming.room} · in{" "}
-                {formatDuration(upcoming.startMin - now.min)}
-              </p>
-            </>
+      <div className="grid grid-cols-4 gap-1.5">
+        {FILTERS.map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => {
+              setFilter(id);
+              if (id !== "all") setRole(id);
+            }}
+            className={cn(
+              "min-h-11 rounded-md border text-xs font-semibold",
+              filter === id
+                ? "border-primary text-primary"
+                : "border-border bg-secondary text-muted-foreground",
+            )}
+          >
+            {id === "all" ? "All" : CREW_LABEL[id]}
+          </button>
+        ))}
+      </div>
+
+      <p className="num text-[11px] text-muted-foreground">
+        {DAY_LABELS[date]} · {isToday ? `now ${now.clock}` : "not today"}
+      </p>
+
+      {isToday && (
+        <section>
+          <SectionLabel>Now</SectionLabel>
+          {nowItems.length > 0 ? (
+            renderList(nowItems, "now")
           ) : (
-            <p className="text-xs text-muted-foreground">
-              Nothing left on today's schedule. Use the time simulator to rehearse a
-              block.
+            <p className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
+              Nothing scheduled right now
+              {nextItems[0]
+                ? ` — next in ${formatDuration(nextItems[0].startMin - now.min)}.`
+                : "."}
             </p>
           )}
-        </Panel>
-      )}
-
-      <QuickActions
-        item={lead}
-        candidates={running.length > 0 ? running : items.filter((i) => i.endMin > now.min).slice(0, 6)}
-        fromRoom={currentRoom}
-        clock={now.clock}
-      />
-
-      {also.length > 0 && (
-        <Panel>
-          <SectionLabel>Also running now</SectionLabel>
-          <ul className="space-y-1">
-            {also.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => setFocusId(item.id)}
-                  className="tap flex w-full items-center gap-1.5 rounded border border-border bg-secondary px-2 py-1.5 text-left"
-                >
-                  <PriorityPill priority={item.priority} />
-                  <RoomPill room={item.room} />
-                  <span className="min-w-0 flex-1 truncate text-[11px]">
-                    {item.title}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      )}
-
-      {leavePlan && (
-        <LeaveByCard plan={leavePlan} min={now.min} seconds={now.seconds} />
-      )}
-
-      <CrewStrip items={items} min={now.min} />
-
-      {nextThree.length > 0 && (
-        <section>
-          <SectionLabel>Next three for {role}</SectionLabel>
-          <ul className="space-y-2">
-            {nextThree.map((item) => (
-              <ItemRow
-                key={item.id}
-                item={item}
-                role={role}
-                status={statusOf(item.id)}
-                onStatus={(s) => setStatus(item.id, s)}
-              />
-            ))}
-          </ul>
         </section>
       )}
 
-      {rest.length > 0 && (
+      {nextItems.length > 0 && (
         <section>
-          <SectionLabel>Rest of the day</SectionLabel>
-          <ul className="space-y-2">
-            {rest.map((item) => (
-              <ItemRow
-                key={item.id}
-                item={item}
-                role={role}
-                status={statusOf(item.id)}
-                onStatus={(s) => setStatus(item.id, s)}
-                compact
-              />
-            ))}
-          </ul>
+          <SectionLabel>Next</SectionLabel>
+          {renderList(nextItems)}
         </section>
       )}
+
+      {laterItems.length > 0 && (
+        <section>
+          <SectionLabel>{isToday ? "Later today" : "Rest of day"}</SectionLabel>
+          {renderList(laterItems)}
+        </section>
+      )}
+
+      {past.length > 0 && (
+        <section>
+          <SectionLabel>Earlier today</SectionLabel>
+          {renderList(past)}
+        </section>
+      )}
+
+      {items.length === 0 && (
+        <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+          No blocks for this filter.
+        </p>
+      )}
+
+      <ItemSheet item={open} onClose={() => setOpenId(null)} />
     </AppShell>
   );
 }
