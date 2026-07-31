@@ -25,6 +25,7 @@ export const Route = createFileRoute("/more")({
 });
 
 const LINKS = [
+  { to: "/event", label: "Event info: PSI Games", hint: "Speakers, competitions, tickets, venue spaces" },
   { to: "/map", label: "Map: venue & hotels", hint: "Westin, JW, Element, Home2 + walk times" },
   { to: "/timeline", label: "Timeline & warnings", hint: "Crew lanes, conflicts, travel gaps" },
   { to: "/log", label: "Activity log & exports", hint: "Status history, handoff reports" },
