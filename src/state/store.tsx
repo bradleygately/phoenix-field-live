@@ -590,6 +590,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     keepItemNote,
     restoreItemNote,
     reorderItemNotes,
+    agendaOrder: crew.agendaOrder ?? {},
+    reorderAgenda,
     reassign,
     upsertInterview,
     patchInterview,
