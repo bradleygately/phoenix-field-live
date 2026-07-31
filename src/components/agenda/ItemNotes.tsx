@@ -11,8 +11,14 @@ function timeLabel(at: number): string {
 }
 
 export function ItemNotes({ itemId }: { itemId: string }) {
-  const { itemNotesFor, addItemNote, deleteItemNote, keepItemNote, restoreItemNote } =
-    useStore();
+  const {
+    itemNotesFor,
+    addItemNote,
+    deleteItemNote,
+    keepItemNote,
+    restoreItemNote,
+    reorderItemNotes,
+  } = useStore();
   const notes = itemNotesFor(itemId);
   const [draft, setDraft] = useState("");
   const [saved, setSaved] = useState(false);
@@ -96,6 +102,7 @@ export function ItemNotes({ itemId }: { itemId: string }) {
           getId={(n) => n.id}
           keepLabel="Keep"
           deleteLabel="Discard"
+          onReorder={(ids) => reorderItemNotes(ids)}
           onKeep={(n) => keepItemNote(n.id)}
           onDelete={(n) => {
             deleteItemNote(n.id);
