@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 const SWIPE_TRIGGER = 96;
+if (typeof window !== "undefined") (window as any).__mod = "v2";
 const HOLD_MS = 350;
 
 type Mode = "idle" | "swipe" | "drag" | "scroll";
