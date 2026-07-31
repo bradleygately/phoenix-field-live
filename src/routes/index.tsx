@@ -43,7 +43,7 @@ const DAY_TABS = [
 const FILTERS: CrewFilter[] = ["all", ...CREW_IDS];
 
 function AgendaScreen() {
-  const { schedule, now, role, setRole, statusOf, setStatus } = useStore();
+  const { schedule, now, setRole, statusOf, setStatus } = useStore();
   const today = EVENT_DATES.includes(now.date) ? now.date : EVENT_DATES[0]!;
   const [date, setDate] = useState(today);
   const [filter, setFilter] = useState<CrewFilter>("all");
@@ -123,8 +123,7 @@ function AgendaScreen() {
       </div>
 
       <p className="num text-[11px] text-muted-foreground">
-        {DAY_LABELS[date]} · {role ? "" : ""}
-        {isToday ? `now ${now.clock}` : "not today"}
+        {DAY_LABELS[date]} · {isToday ? `now ${now.clock}` : "not today"}
       </p>
 
       {isToday && (

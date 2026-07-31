@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InterviewsRouteImport } from './routes/interviews'
 import { Route as LogRouteImport } from './routes/log'
+import { Route as MoreRouteImport } from './routes/more'
+import { Route as NotesRouteImport } from './routes/notes'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TimelineRouteImport } from './routes/timeline'
 import { Route as WrapRouteImport } from './routes/wrap'
@@ -29,6 +31,16 @@ const InterviewsRoute = InterviewsRouteImport.update({
 const LogRoute = LogRouteImport.update({
   id: '/log',
   path: '/log',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MoreRoute = MoreRouteImport.update({
+  id: '/more',
+  path: '/more',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotesRoute = NotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -51,6 +63,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
+  '/more': typeof MoreRoute
+  '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
@@ -59,6 +73,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
+  '/more': typeof MoreRoute
+  '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
@@ -68,20 +84,40 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
+  '/more': typeof MoreRoute
+  '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/interviews' | '/log' | '/settings' | '/timeline' | '/wrap'
+  fullPaths:
+    | '/'
+    | '/interviews'
+    | '/log'
+    | '/more'
+    | '/notes'
+    | '/settings'
+    | '/timeline'
+    | '/wrap'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/interviews' | '/log' | '/settings' | '/timeline' | '/wrap'
+  to:
+    | '/'
+    | '/interviews'
+    | '/log'
+    | '/more'
+    | '/notes'
+    | '/settings'
+    | '/timeline'
+    | '/wrap'
   id:
     | '__root__'
     | '/'
     | '/interviews'
     | '/log'
+    | '/more'
+    | '/notes'
     | '/settings'
     | '/timeline'
     | '/wrap'
@@ -91,6 +127,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   InterviewsRoute: typeof InterviewsRoute
   LogRoute: typeof LogRoute
+  MoreRoute: typeof MoreRoute
+  NotesRoute: typeof NotesRoute
   SettingsRoute: typeof SettingsRoute
   TimelineRoute: typeof TimelineRoute
   WrapRoute: typeof WrapRoute
@@ -117,6 +155,20 @@ declare module '@tanstack/react-router' {
       path: '/log'
       fullPath: '/log'
       preLoaderRoute: typeof LogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/more': {
+      id: '/more'
+      path: '/more'
+      fullPath: '/more'
+      preLoaderRoute: typeof MoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notes': {
+      id: '/notes'
+      path: '/notes'
+      fullPath: '/notes'
+      preLoaderRoute: typeof NotesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -147,6 +199,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   InterviewsRoute: InterviewsRoute,
   LogRoute: LogRoute,
+  MoreRoute: MoreRoute,
+  NotesRoute: NotesRoute,
   SettingsRoute: SettingsRoute,
   TimelineRoute: TimelineRoute,
   WrapRoute: WrapRoute,
