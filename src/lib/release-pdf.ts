@@ -243,9 +243,10 @@ function slug(value: string, fallback: string): string {
 }
 
 export function releasePdfFilenameFor(
-  releaseId: string,
-  interviewer: string | null | undefined,
+  participantName: string | null | undefined,
   signedAtIso: string,
+  sessionLocation: string | null | undefined,
+  releaseId: string,
 ): string {
   const d = new Date(signedAtIso);
   let stamp = "unknown-time";
@@ -263,15 +264,20 @@ export function releasePdfFilenameFor(
       parts.find((part) => part.type === type)?.value ?? "00";
     stamp = `${value("year")}${value("month")}${value("day")}-${value("hour")}${value("minute")}`;
   }
-  return `${slug(releaseId, "release")}_${slug(interviewer ?? "", "crew")}_${stamp}.pdf`;
+  return `${slug(participantName ?? "", "Participant")}_${stamp}_${slug(
+    sessionLocation ?? "",
+    "Location-Not-Set",
+  )}_${slug(releaseId, "Release")}.pdf`;
 }
 
 export function releasePdfFilename(record: ReleaseRecord): string {
-  const interviewer =
+  const participant =
     record.kind === "adult"
-      ? record.adult?.releaseObtainedBy
-      : record.minor?.releaseObtainedBy;
-  return releasePdfFilenameFor(record.releaseId, interviewer, record.signedAtIso);
+      ? record.adult?.fullLegalName
+      : record.minor?.minorFullLegalName;
+  const location =
+    record.kind === "adult" ? record.adult?.sessionLocation : record.minor?.sessionLocation;
+  return releasePdfFilenameFor(participant, record.signedAtIso, location, record.releaseId);
 }
 
 export async function deliverReleasePdf(

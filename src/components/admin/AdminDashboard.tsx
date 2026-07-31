@@ -108,9 +108,10 @@ export function AdminDashboard() {
       const anchor = document.createElement("a");
       anchor.href = url;
       anchor.download = releasePdfFilenameFor(
-        row.release_id,
-        row.release_obtained_by,
+        row.participant_name,
         row.signed_at,
+        row.session_location,
+        row.release_id,
       );
       anchor.style.display = "none";
       document.body.appendChild(anchor);
