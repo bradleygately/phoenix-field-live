@@ -4,6 +4,33 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", "SFMono-Regular", "Roboto Mono", Menlo, Consolas, monospace;
+  --color-gold: oklch(0.759 0.128 68.5);
+  --color-gold-bright: oklch(0.842 0.128 78.5);
+  --color-ok: oklch(0.79 0.17 154);
+  --color-alert: oklch(0.657 0.213 20.5);
+  --color-surface: oklch(0.219 0.0075 268);
+  --color-surface-2: oklch(0.262 0.0085 268);
+  --color-line: oklch(0.352 0.014 262);
+}
+
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
+
+@utility tap {
+  min-height: 44px;
+  min-width: 44px;
+}
+
 /*
  * Design system definition.
  *
@@ -63,25 +90,26 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  /* PSI Games field palette — charcoal base, phoenix gold accent. */
+  --background: oklch(0.169 0.0075 268);
+  --foreground: oklch(0.963 0.0025 258);
+  --card: oklch(0.219 0.0075 268);
+  --card-foreground: oklch(0.963 0.0025 258);
+  --popover: oklch(0.219 0.0075 268);
+  --popover-foreground: oklch(0.963 0.0025 258);
+  --primary: oklch(0.759 0.128 68.5);
+  --primary-foreground: oklch(0.169 0.0075 268);
+  --secondary: oklch(0.262 0.0085 268);
+  --secondary-foreground: oklch(0.963 0.0025 258);
+  --muted: oklch(0.262 0.0085 268);
+  --muted-foreground: oklch(0.706 0.011 258);
+  --accent: oklch(0.262 0.0085 268);
+  --accent-foreground: oklch(0.963 0.0025 258);
+  --destructive: oklch(0.657 0.213 20.5);
+  --destructive-foreground: oklch(0.963 0.0025 258);
+  --border: oklch(0.352 0.014 262);
+  --input: oklch(0.352 0.014 262);
+  --ring: oklch(0.759 0.128 68.5);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -140,5 +168,16 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      transition-duration: 0.001ms !important;
+    }
   }
 }
