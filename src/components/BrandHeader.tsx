@@ -28,8 +28,8 @@ export function BrandFooter() {
         {BRAND.website} · YouTube {BRAND.youtube}
       </p>
       <p className="mt-3 flex flex-wrap justify-center gap-4">
-        <Link to="/admin" className="underline underline-offset-4 hover:text-foreground">
-          Production staff
+        <Link to="/releases/archive" className="underline underline-offset-4 hover:text-foreground">
+          Release archive
         </Link>
         <Link to="/more" className="underline underline-offset-4 hover:text-foreground">
           Crew app
