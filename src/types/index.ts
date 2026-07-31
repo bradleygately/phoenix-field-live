@@ -227,6 +227,8 @@ export interface CrewState {
   statuses: Record<string, Status>;
   /** Multiple timestamped notes per schedule item. */
   itemNotes: ItemNote[];
+  /** Manual agenda tile order set by dragging, keyed by schedule item id. */
+  agendaOrder: Record<string, number>;
   changes: FieldChange[];
   log: LogEntry[];
   positions: { [K in CrewId]?: CrewPosition | undefined };
@@ -242,6 +244,7 @@ export interface CrewState {
 export const EMPTY_CREW_STATE: CrewState = {
   statuses: {},
   itemNotes: [],
+  agendaOrder: {},
   changes: [],
   log: [],
   positions: {},
