@@ -13,8 +13,8 @@ export function AppHeader({
   warningCount = 0,
   onWarnings,
 }: {
-  warningCount?: number;
-  onWarnings?: () => void;
+  warningCount?: number | undefined;
+  onWarnings?: (() => void) | undefined;
 }) {
   const { now, role, setRole, simOffsetMs, ready } = useStore();
   const dayLabel = DAY_LABELS[now.date] ?? now.weekday;
