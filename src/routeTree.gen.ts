@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InterviewsRouteImport } from './routes/interviews'
 import { Route as LogRouteImport } from './routes/log'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TimelineRouteImport } from './routes/timeline'
 import { Route as WrapRouteImport } from './routes/wrap'
 
@@ -30,6 +31,11 @@ const LogRoute = LogRouteImport.update({
   path: '/log',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TimelineRoute = TimelineRouteImport.update({
   id: '/timeline',
   path: '/timeline',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
+  '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
+  '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
 }
@@ -60,21 +68,30 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
+  '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/interviews' | '/log' | '/timeline' | '/wrap'
+  fullPaths: '/' | '/interviews' | '/log' | '/settings' | '/timeline' | '/wrap'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/interviews' | '/log' | '/timeline' | '/wrap'
-  id: '__root__' | '/' | '/interviews' | '/log' | '/timeline' | '/wrap'
+  to: '/' | '/interviews' | '/log' | '/settings' | '/timeline' | '/wrap'
+  id:
+    | '__root__'
+    | '/'
+    | '/interviews'
+    | '/log'
+    | '/settings'
+    | '/timeline'
+    | '/wrap'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   InterviewsRoute: typeof InterviewsRoute
   LogRoute: typeof LogRoute
+  SettingsRoute: typeof SettingsRoute
   TimelineRoute: typeof TimelineRoute
   WrapRoute: typeof WrapRoute
 }
@@ -102,6 +119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/timeline': {
       id: '/timeline'
       path: '/timeline'
@@ -123,9 +147,20 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   InterviewsRoute: InterviewsRoute,
   LogRoute: LogRoute,
+  SettingsRoute: SettingsRoute,
   TimelineRoute: TimelineRoute,
   WrapRoute: WrapRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
