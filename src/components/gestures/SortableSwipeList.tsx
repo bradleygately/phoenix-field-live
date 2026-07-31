@@ -17,8 +17,6 @@ interface RowProps {
   sortable?: boolean;
   dragging?: boolean;
   onDragStart?: ((id: string) => void) | undefined;
-  onDragOver?: ((id: string, clientY: number) => void) | undefined;
-  onDragEnd?: (() => void) | undefined;
 }
 
 /**
@@ -36,8 +34,6 @@ export function SwipeRow({
   sortable = false,
   dragging = false,
   onDragStart,
-  onDragOver,
-  onDragEnd,
 }: RowProps) {
   const [dx, setDx] = useState(0);
   const mode = useRef<Mode>("idle");
@@ -73,10 +69,7 @@ export function SwipeRow({
         if (!start.current) return;
         const ddx = e.clientX - start.current.x;
         const ddy = e.clientY - start.current.y;
-        if (mode.current === "drag") {
-          onDragOver?.(id, e.clientY);
-          return;
-        }
+        if (mode.current === "drag") return;
         if (mode.current === "idle") {
           if (Math.abs(ddy) > 10 && Math.abs(ddy) > Math.abs(ddx)) {
             mode.current = "scroll";
@@ -95,8 +88,6 @@ export function SwipeRow({
       onPointerUp={(e) => {
         e.currentTarget.releasePointerCapture?.(e.pointerId);
         clearHold();
-        console.log("UP mode", mode.current);
-        if (mode.current === "drag") onDragEnd?.();
         if (mode.current === "swipe") {
           if (dx < -SWIPE_TRIGGER) onDelete?.();
           else if (dx > SWIPE_TRIGGER) onKeep?.();
@@ -107,7 +98,6 @@ export function SwipeRow({
       }}
       onPointerCancel={() => {
         clearHold();
-        if (mode.current === "drag") onDragEnd?.();
         setDx(0);
         mode.current = "idle";
         start.current = null;
@@ -170,6 +160,9 @@ export function SortableSwipeList<T>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
+  const orderRef = useRef(order);
+  orderRef.current = order;
+
   const byId = new Map(items.map((i) => [getId(i), i]));
   const ordered = order.map((id) => byId.get(id)).filter(Boolean) as T[];
 
@@ -193,6 +186,29 @@ export function SortableSwipeList<T>({
     });
   };
 
+  // Drag tracking lives on the window: reordering moves the row's DOM node, which
+  // would otherwise drop the pointer capture mid-drag.
+  useEffect(() => {
+    if (!dragId) return;
+    const move = (e: PointerEvent) => {
+      e.preventDefault();
+      moveOver(dragId, e.clientY);
+    };
+    const end = () => {
+      setDragId(null);
+      onReorder?.(orderRef.current);
+    };
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragId]);
+
   return (
     <ul className={cn("space-y-2", className)}>
       {ordered.map((item) => {
@@ -204,12 +220,6 @@ export function SortableSwipeList<T>({
             sortable={Boolean(onReorder)}
             dragging={dragId === id}
             onDragStart={setDragId}
-            onDragOver={(dragged, y) => moveOver(dragged, y)}
-            onDragEnd={() => {
-              setDragId(null);
-              console.log("REORDER", order.join(","));
-              onReorder?.(order);
-            }}
             onDelete={onDelete ? () => onDelete(item) : undefined}
             onKeep={onKeep ? () => onKeep(item) : undefined}
             {...(keepLabel ? { keepLabel } : {})}
