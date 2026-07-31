@@ -124,3 +124,32 @@ export function TapButton({ active, tone = "default", className, ...rest }: TapP
     />
   );
 }
+/** Consistent helpful empty state: what this list is for + the primary action. */
+export function EmptyState({
+  title,
+  body,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  body: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-dashed border-border bg-card p-5 text-center">
+      <p className="text-sm font-semibold">{title}</p>
+      <p className="mx-auto mt-1 max-w-[36ch] text-xs text-muted-foreground">{body}</p>
+      {actionLabel && onAction && (
+        <TapButton
+          tone="gold"
+          active
+          className="mx-auto mt-3 h-11 px-4"
+          onClick={onAction}
+        >
+          {actionLabel}
+        </TapButton>
+      )}
+    </div>
+  );
+}

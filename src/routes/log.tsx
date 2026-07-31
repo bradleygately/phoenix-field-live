@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
-import { Panel, SectionLabel, TapButton } from "@/components/primitives";
+import { EmptyState, Panel, SectionLabel, TapButton } from "@/components/primitives";
 import { useStore } from "@/state/store";
 import { LOG_KINDS, type LogKind } from "@/types";
 
@@ -112,7 +112,10 @@ function LogScreen() {
       <Panel>
         <SectionLabel>Activity log ({entries.length})</SectionLabel>
         {entries.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nothing logged yet.</p>
+          <EmptyState
+            title="Nothing logged yet"
+            body="Status changes, notes, interviews, card moves and schedule overrides are recorded here automatically."
+          />
         ) : (
           <ul className="space-y-1.5">
             {entries.map((entry) => (

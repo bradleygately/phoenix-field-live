@@ -16,6 +16,7 @@ import {
   repository,
   type PersistedState,
 } from "@/lib/repository";
+import { mergeCrew, type BackupFile } from "@/lib/backup";
 import { DEFAULT_SETTINGS, type TravelSettings } from "@/lib/settings";
 import { charlotteNow, type CharlotteNow } from "@/lib/time";
 import {
@@ -104,6 +105,8 @@ interface StoreValue {
   setSimOffsetMs: (ms: number) => void;
   exportState: () => string;
   importState: (json: string) => boolean;
+  /** Restore a backup file, either merged into this phone or replacing it. */
+  applyBackup: (file: BackupFile, mode: "merge" | "replace") => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -612,6 +615,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     epochMs,
     simOffsetMs,
     setSimOffsetMs,
+    applyBackup: (file, mode) => {
+      setCrew((prev) =>
+        mode === "replace"
+          ? { ...INITIAL_CREW_STATE, ...file.crew }
+          : mergeCrew(prev, { ...INITIAL_CREW_STATE, ...file.crew }),
+      );
+      setSettings({ ...DEFAULT_SETTINGS, ...file.settings });
+    },
     exportState: () => JSON.stringify({ crew, settings, version: 1 }, null, 2),
     importState: (json) => {
       try {

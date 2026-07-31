@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { registerAppServiceWorker, registerChunkErrorRecovery } from "../lib/pwa";
 import { THEME_BOOT_SCRIPT, ThemeProvider } from "../lib/theme";
 import { RecorderProvider } from "../lib/recorder";
+import { Toaster } from "../components/ui/sonner";
 import { StoreProvider } from "../state/store";
 
 function NotFoundComponent() {
@@ -145,6 +146,7 @@ function RootComponent() {
           <RecorderProvider>
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
+            <Toaster position="top-center" richColors closeButton />
           </RecorderProvider>
         </StoreProvider>
       </ThemeProvider>

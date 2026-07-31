@@ -6,7 +6,11 @@ import { Panel, PriorityPill, SectionLabel, TapButton } from "@/components/primi
 import { ChipRow, Field, Sheet, TextArea, TextInput } from "@/components/Sheet";
 import { SortableSwipeList } from "@/components/gestures/SortableSwipeList";
 import { InterviewSheet } from "@/components/sheets/InterviewSheet";
+import { toast } from "sonner";
+
+import { EmptyState } from "@/components/primitives";
 import { getRecording } from "@/lib/audio-store";
+import { extensionForBlob, fieldFilename, shareOrDownload } from "@/lib/filename";
 import { useRecorder } from "@/lib/recorder";
 import { useStore } from "@/state/store";
 import {
@@ -205,6 +209,16 @@ function InterviewsScreen() {
           if (recorder.interviewId === i.id) return;
           deleteInterview(i.id);
           setUndo(i);
+          toast("Interview deleted", {
+            description: i.target,
+            action: {
+              label: "Undo",
+              onClick: () => {
+                restoreInterview(i);
+                setUndo(null);
+              },
+            },
+          });
         }}
         renderItem={(i) => {
           const live = recorder.interviewId === i.id;
@@ -243,7 +257,7 @@ function InterviewsScreen() {
                 {i.location ? ` · ${i.location}` : ""}
               </p>
               {i.recordingKey && !live && (
-                <RecordingPlayer keyName={i.recordingKey} ms={i.recordingMs ?? 0} />
+                <RecordingPlayer interview={i} keyName={i.recordingKey} ms={i.recordingMs ?? 0} />
               )}
               <div className="grid grid-cols-3 gap-1.5 pt-0.5">
                 <TapButton
@@ -277,7 +291,16 @@ function InterviewsScreen() {
         }}
       />
       {list.length === 0 && (
-        <p className="text-xs text-muted-foreground">Nothing matches this filter.</p>
+        <EmptyState
+          title={filter === "All" ? "No interviews yet" : "Nothing matches this filter"}
+          body={
+            filter === "All"
+              ? "Track every subject here: who, the angle, access, release status and the recorded audio."
+              : "Every interview is still tracked — clear the filter to see the full list."
+          }
+          actionLabel={filter === "All" ? "Start interview" : "Show all"}
+          onAction={() => (filter === "All" ? setAdding(true) : setFilter("All"))}
+        />
       )}
 
       <Panel>
@@ -301,8 +324,43 @@ function clock(ms: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function RecordingPlayer({ keyName, ms }: { keyName: string; ms: number }) {
+function RecordingPlayer({
+  interview,
+  keyName,
+  ms,
+}: {
+  interview: Interview;
+  keyName: string;
+  ms: number;
+}) {
   const [url, setUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const share = async () => {
+    setBusy(true);
+    try {
+      const blob = await getRecording(keyName);
+      if (!blob) {
+        toast.error("That take is no longer on this device");
+        return;
+      }
+      const filename = fieldFilename({
+        name: interview.target,
+        epochMs: interview.updatedAt || Date.now(),
+        location: interview.location,
+        ref: interview.fileRef || interview.id,
+        ext: extensionForBlob(blob),
+      });
+      const how = await shareOrDownload(blob, filename);
+      toast.success(how === "shared" ? "Audio shared" : "Audio downloaded", {
+        description: filename,
+      });
+    } catch {
+      toast.error("Could not export that audio file");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     let revoke: string | null = null;
@@ -321,6 +379,13 @@ function RecordingPlayer({ keyName, ms }: { keyName: string; ms: number }) {
     <div className="space-y-1">
       <p className="num text-[10px] text-ok uppercase">Audio saved · {clock(ms)}</p>
       <audio controls src={url} className="h-9 w-full" />
+      <TapButton
+        className="h-11 w-full text-[11px]"
+        disabled={busy}
+        onClick={() => void share()}
+      >
+        {busy ? "Preparing…" : "Share / download audio"}
+      </TapButton>
     </div>
   );
 }

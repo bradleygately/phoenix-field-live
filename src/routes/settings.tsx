@@ -1,8 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
+import { toast } from "sonner";
+
 import { Panel, SectionLabel, TapButton } from "@/components/primitives";
+import { Field, Sheet } from "@/components/Sheet";
+import { useLeaveByAlertsEnabled } from "@/components/live/LeaveByAlert";
+import {
+  notifyPermission,
+  requestNotifyPermission,
+  type NotifyPermission,
+} from "@/lib/alerts";
+import {
+  backupFilename,
+  buildBackup,
+  parseBackup,
+  summarize,
+  type BackupFile,
+} from "@/lib/backup";
+import { shareOrDownload } from "@/lib/filename";
 import { useTheme, type ThemePref } from "@/lib/theme";
 import { SETTINGS_FIELDS } from "@/lib/settings";
 import { estimateTravel } from "@/lib/travel";
@@ -45,11 +62,11 @@ function SettingsScreen() {
     setSimOffsetMs,
     now,
     epochMs,
-    exportState,
-    importState,
   } = useStore();
   const [jump, setJump] = useState("12:35 PM");
-  const [payload, setPayload] = useState("");
+  // The clock ticks every second, so server HTML can never match the client.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <AppShell>
@@ -60,8 +77,8 @@ function SettingsScreen() {
       <Panel className="space-y-2">
         <SectionLabel>Time simulator</SectionLabel>
         <p className="num text-xs">
-          Charlotte (ET) now: <span className="font-bold">{now.clock}</span> ·{" "}
-          {now.date}
+          Charlotte (ET) now:{" "}
+          <span className="font-bold">{mounted ? now.clock : "—"}</span> · {now.date}
         </p>
         <div className="flex gap-1.5">
           <input
@@ -148,28 +165,13 @@ function SettingsScreen() {
         </p>
       </Panel>
 
+      <BackupPanel />
+
       <Panel className="space-y-2">
-        <SectionLabel>Import / export</SectionLabel>
-        <textarea
-          value={payload}
-          onChange={(e) => setPayload(e.target.value)}
-          rows={5}
-          placeholder="Paste crew state JSON here to import"
-          className="num w-full rounded-md border border-border bg-secondary p-2 text-[11px]"
-        />
-        <div className="grid grid-cols-2 gap-1.5">
-          <TapButton onClick={() => setPayload(exportState())}>Export</TapButton>
-          <TapButton
-            tone="gold"
-            active
-            onClick={() => {
-              if (!importState(payload)) window.alert("Invalid JSON");
-            }}
-          >
-            Import
-          </TapButton>
-        </div>
+        <SectionLabel>Leave-by alerts</SectionLabel>
+        <AlertsPanel />
       </Panel>
+
     </AppShell>
   );
 }
@@ -197,6 +199,187 @@ function ThemePicker() {
       </div>
       <p className="text-[11px] text-muted-foreground">
         Currently showing {resolved} mode. Your choice is remembered on this device.
+      </p>
+    </div>
+  );
+}
+
+
+function BackupPanel() {
+  const { crew, settings, applyBackup, epochMs, addLog } = useStore();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [pending, setPending] = useState<BackupFile | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const exportBackup = async () => {
+    setBusy(true);
+    try {
+      const file = buildBackup(crew, settings);
+      const blob = new Blob([JSON.stringify(file, null, 2)], {
+        type: "application/json",
+      });
+      const name = backupFilename(epochMs);
+      const how = await shareOrDownload(blob, name);
+      addLog({ kind: "note", text: `Backup exported (${name})` });
+      toast.success(how === "shared" ? "Backup shared" : "Backup downloaded", {
+        description: name,
+      });
+    } catch {
+      toast.error("Could not create the backup file");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const pickFile = async (file: File | undefined) => {
+    if (!file) return;
+    const parsed = parseBackup(await file.text());
+    if (!parsed) {
+      toast.error("That file is not a Phoenix Field Live backup");
+      return;
+    }
+    setPending(parsed);
+  };
+
+  return (
+    <>
+      <Panel className="space-y-2">
+        <SectionLabel>Backup &amp; restore</SectionLabel>
+        <p className="text-[11px] text-muted-foreground">
+          Everything lives on this phone. Export a backup file after each day — it holds
+          the agenda statuses, notes, interviews and log. Interview audio stays on the
+          device and is not included.
+        </p>
+        <p className="num text-[10px] text-muted-foreground">On this phone: {summarize(crew)}</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          <TapButton
+            tone="gold"
+            active
+            className="h-12"
+            disabled={busy}
+            onClick={() => void exportBackup()}
+          >
+            {busy ? "Preparing…" : "Export backup"}
+          </TapButton>
+          <TapButton className="h-12" onClick={() => fileInput.current?.click()}>
+            Import / restore
+          </TapButton>
+        </div>
+        <input
+          ref={fileInput}
+          type="file"
+          accept="application/json,.json"
+          className="sr-only"
+          onChange={(e) => {
+            void pickFile(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
+      </Panel>
+
+      <Sheet
+        open={Boolean(pending)}
+        title="Restore backup"
+        onClose={() => setPending(null)}
+      >
+        {pending && (
+          <>
+            <Field label="Backup contents">
+              <p className="num rounded-md border border-border bg-secondary p-2 text-[11px]">
+                {summarize(pending.crew)}
+                {pending.exportedAt ? ` · saved ${pending.exportedAt.slice(0, 16).replace("T", " ")}` : ""}
+              </p>
+            </Field>
+            <p className="text-[11px] text-muted-foreground">
+              Merge keeps everything already on this phone and adds anything missing.
+              Replace wipes this phone&apos;s data and uses the backup exactly.
+            </p>
+            <TapButton
+              tone="gold"
+              active
+              className="h-12 w-full"
+              onClick={() => {
+                applyBackup(pending, "merge");
+                setPending(null);
+                toast.success("Backup merged into this phone");
+              }}
+            >
+              Merge into this phone
+            </TapButton>
+            <TapButton
+              tone="alert"
+              active
+              className="h-12 w-full"
+              onClick={() => {
+                if (!window.confirm("Replace all data on this phone with the backup?")) return;
+                applyBackup(pending, "replace");
+                setPending(null);
+                toast.success("This phone now matches the backup");
+              }}
+            >
+              Replace everything
+            </TapButton>
+            <TapButton className="h-11 w-full" onClick={() => setPending(null)}>
+              Cancel
+            </TapButton>
+          </>
+        )}
+      </Sheet>
+    </>
+  );
+}
+
+function AlertsPanel() {
+  const { enabled, setEnabled } = useLeaveByAlertsEnabled();
+  const [permission, setPermission] = useState<NotifyPermission>("default");
+  useEffect(() => setPermission(notifyPermission()), []);
+
+  return (
+    <div className="space-y-2">
+      <p className="text-[11px] text-muted-foreground">
+        Alerts fire 10 minutes before the next departure and again at go-time. Without
+        notification permission the app shows a countdown banner instead.
+      </p>
+      <div className="grid grid-cols-2 gap-1.5">
+        <TapButton
+          tone="gold"
+          active={enabled}
+          className="h-11"
+          onClick={() => {
+            setEnabled(true);
+            toast.success("Leave-by alerts on");
+          }}
+        >
+          On
+        </TapButton>
+        <TapButton
+          tone="alert"
+          active={!enabled}
+          className="h-11"
+          onClick={() => {
+            setEnabled(false);
+            toast("Leave-by alerts muted");
+          }}
+        >
+          Muted
+        </TapButton>
+      </div>
+      {permission !== "granted" && permission !== "unsupported" && (
+        <TapButton
+          className="h-11 w-full"
+          onClick={() =>
+            void requestNotifyPermission().then((next) => {
+              setPermission(next);
+              if (next === "granted") toast.success("Notifications allowed");
+              else toast("Banner countdown will be used instead");
+            })
+          }
+        >
+          Allow notifications
+        </TapButton>
+      )}
+      <p className="num text-[10px] text-muted-foreground">
+        Notification permission: {permission}
       </p>
     </div>
   );

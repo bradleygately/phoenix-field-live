@@ -2,11 +2,16 @@ import type { ReactNode } from "react";
 
 import { AppHeader } from "./AppHeader";
 import { BottomNav } from "./BottomNav";
+import { LeaveByAlert } from "./live/LeaveByAlert";
+import { QuickCapture } from "./QuickCapture";
 
 export function AppShell({
   children,
+  quickCapture = true,
 }: {
   children: ReactNode;
+  /** hide the floating "+" on screens that already own the bottom-right corner */
+  quickCapture?: boolean;
   /** accepted for backwards compatibility, no longer rendered */
   warningCount?: number | undefined;
   onWarnings?: (() => void) | undefined;
@@ -14,7 +19,11 @@ export function AppShell({
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[560px] flex-col bg-background">
       <AppHeader />
-      <main className="flex-1 space-y-3 px-3 pt-3 pb-24">{children}</main>
+      <main className="flex-1 space-y-3 px-3 pt-3 pb-36">
+        <LeaveByAlert />
+        {children}
+      </main>
+      {quickCapture && <QuickCapture />}
       <BottomNav />
     </div>
   );

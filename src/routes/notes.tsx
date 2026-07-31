@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/AppShell";
-import { SectionLabel } from "@/components/primitives";
+import { EmptyState, SectionLabel } from "@/components/primitives";
 import { TextArea } from "@/components/Sheet";
 import { useStore } from "@/state/store";
 
@@ -29,6 +31,7 @@ export const Route = createFileRoute("/notes")({
 
 function NotesScreen() {
   const { schedule, crew, setNote, addLog } = useStore();
+  const navigate = useNavigate();
   const [scratch, setScratch] = useState(crew.notes["scratch"] ?? "");
 
   const withNotes = useMemo(() => {
@@ -65,8 +68,10 @@ function NotesScreen() {
           value={scratch}
           onChange={(e) => setScratch(e.target.value)}
           onBlur={() => {
+            if (scratch === (crew.notes["scratch"] ?? "")) return;
             setNote("scratch", scratch);
             addLog({ kind: "note", text: "Scratchpad updated" });
+            toast.success("Scratchpad saved");
           }}
           placeholder="Anything you need to remember"
         />
@@ -75,9 +80,12 @@ function NotesScreen() {
       <section>
         <SectionLabel>Block notes</SectionLabel>
         {withNotes.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-            No block notes yet. Tap any agenda item to add one.
-          </p>
+          <EmptyState
+            title="No block notes yet"
+            body="Notes you attach to a schedule block collect here — use the + button or open any agenda item."
+            actionLabel="Open agenda"
+            onAction={() => void navigate({ to: "/" })}
+          />
         ) : (
           <ul className="space-y-2">
             {withNotes.map(({ item, notes }) => (
