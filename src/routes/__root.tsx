@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { registerAppServiceWorker } from "../lib/pwa";
+import { registerAppServiceWorker, registerChunkErrorRecovery } from "../lib/pwa";
 import { StoreProvider } from "../state/store";
 
 function NotFoundComponent() {
@@ -132,6 +132,7 @@ function RootComponent() {
 
   useEffect(() => {
     registerAppServiceWorker();
+    registerChunkErrorRecovery();
   }, []);
 
   return (

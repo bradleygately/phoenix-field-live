@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 import { PhoenixMark } from "./primitives";
 import { DAY_LABELS } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -6,6 +8,9 @@ import { useStore } from "@/state/store";
 export function AppHeader() {
   const { now, simOffsetMs } = useStore();
   const dayLabel = DAY_LABELS[now.date] ?? now.weekday;
+  // The clock ticks every second, so server HTML can never match the client.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <header
@@ -44,7 +49,7 @@ export function AppHeader() {
             now.isDay ? "text-gold-bright" : "text-muted-foreground",
           )}
         >
-          {now.clock}
+          {mounted ? now.clock : ""}
         </span>
       </div>
     </header>
