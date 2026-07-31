@@ -213,6 +213,8 @@ export interface ItemNote {
   at: number;
   /** swiped right to keep — kept notes sort to the top */
   kept?: boolean | undefined;
+  /** manual priority position set by dragging the note tile */
+  order?: number | undefined;
 }
 
 export interface CrewPosition {
