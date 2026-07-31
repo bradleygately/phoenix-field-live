@@ -344,7 +344,6 @@ export function ReleaseFlow({ kind }: { kind: ReleaseKind }) {
               <button
                 type="button"
                 className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 text-left"
-                aria-експanded={undefined}
                 aria-expanded={showProduction}
                 onClick={() => setShowProduction((v) => !v)}
               >
