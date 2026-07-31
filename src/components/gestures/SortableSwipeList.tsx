@@ -189,7 +189,7 @@ export function SortableSwipeList<T>({
   // Drag tracking lives on the window: reordering moves the row's DOM node, which
   // would otherwise drop the pointer capture mid-drag.
   useEffect(() => {
-    console.log("EFFECT", dragId);
+    (window as any).__eff = ((window as any).__eff||0)+1;
     if (!dragId) return;
     const move = (e: PointerEvent) => {
       e.preventDefault();
