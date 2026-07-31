@@ -630,11 +630,9 @@ function Confirmation({ record }: { record: ReleaseRecord }) {
           <a
             href={ready.url}
             download={ready.filename}
-            target="_blank"
-            rel="noopener noreferrer"
             className="font-semibold text-primary underline underline-offset-4"
           >
-            Open {ready.filename}
+            Download {ready.filename}
           </a>
         </p>
       )}

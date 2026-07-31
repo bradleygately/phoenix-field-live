@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-import { releasePdfBlob } from "./release-pdf";
+import { releasePdfBlob, releasePdfFilename } from "./release-pdf";
 import { upsertRecord } from "./release-store";
 import type { ReleaseRecord } from "./release-types";
 
@@ -48,7 +48,7 @@ export async function submitRelease(record: ReleaseRecord): Promise<ReleaseRecor
     );
   }
 
-  const pdfPath = `${record.releaseId}.pdf`;
+  const pdfPath = releasePdfFilename(record);
   uploads.push(
     releasePdfBlob(record).then((blob) =>
       supabase.storage
