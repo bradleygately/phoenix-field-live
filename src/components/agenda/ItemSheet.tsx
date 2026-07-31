@@ -79,7 +79,10 @@ export function ItemSheet({
         />
       </Field>
 
-      <ItemNotes itemId={item.id} />
+      <ItemNotes
+        itemId={item.id}
+        context={`${item.startLabel}–${item.endLabel} ${item.title}${item.room ? ` @ ${item.room}` : ""}`}
+      />
 
       <Field label="Reassign crew">
         <div className="grid grid-cols-3 gap-1.5">

@@ -72,6 +72,9 @@ interface StoreValue {
   keepItemNote: (noteId: string) => void;
   restoreItemNote: (note: ItemNote) => void;
   reorderItemNotes: (ids: string[]) => void;
+  /** Manual agenda tile order (drag to reorder within a section). */
+  agendaOrder: Record<string, number>;
+  reorderAgenda: (ids: string[]) => void;
   reassign: (input: {
     item: ScheduleItem;
     who: CrewId;
@@ -308,6 +311,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           rank.has(n.id) ? { ...n, order: rank.get(n.id)! } : n,
         ),
       };
+    });
+  }, []);
+
+  /** Manual agenda tile order set by dragging, persisted like everything else. */
+  const reorderAgenda = useCallback<StoreValue["reorderAgenda"]>((ids) => {
+    setCrew((prev) => {
+      const next = { ...(prev.agendaOrder ?? {}) };
+      ids.forEach((id, index) => {
+        next[id] = index;
+      });
+      return { ...prev, agendaOrder: next };
     });
   }, []);
 
@@ -576,6 +590,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     keepItemNote,
     restoreItemNote,
     reorderItemNotes,
+    agendaOrder: crew.agendaOrder ?? {},
+    reorderAgenda,
     reassign,
     upsertInterview,
     patchInterview,

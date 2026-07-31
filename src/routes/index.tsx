@@ -1,16 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { SectionLabel } from "@/components/primitives";
 import { AgendaCard } from "@/components/agenda/AgendaCard";
 import { ItemSheet } from "@/components/agenda/ItemSheet";
 import { CREW_LABEL, matchesCrew, type CrewFilter } from "@/components/agenda/agenda";
+import { SortableSwipeList } from "@/components/gestures/SortableSwipeList";
 import { cn } from "@/lib/utils";
 import { itemsForDate } from "@/lib/live";
 import { DAY_LABELS, EVENT_DATES, formatDuration } from "@/lib/time";
 import { useStore } from "@/state/store";
-import { CREW_IDS, type ScheduleItem } from "@/types";
+import { CREW_IDS, type ScheduleItem, type Status } from "@/types";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -43,11 +44,15 @@ const DAY_TABS = [
 const FILTERS: CrewFilter[] = ["all", ...CREW_IDS];
 
 function AgendaScreen() {
-  const { schedule, now, setRole, statusOf, setStatus } = useStore();
+  const { schedule, now, setRole, statusOf, setStatus, agendaOrder, reorderAgenda } =
+    useStore();
   const today = EVENT_DATES.includes(now.date) ? now.date : EVENT_DATES[0]!;
   const [date, setDate] = useState(today);
   const [filter, setFilter] = useState<CrewFilter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [undo, setUndo] = useState<{ id: string; title: string; prev: Status } | null>(
+    null,
+  );
 
   const items = useMemo(
     () => itemsForDate(schedule, date).filter((i) => matchesCrew(i, filter)),
@@ -65,11 +70,37 @@ function AgendaScreen() {
 
   const open = items.find((i) => i.id === openId) ?? null;
 
+  useEffect(() => {
+    if (!undo) return;
+    const id = window.setTimeout(() => setUndo(null), 6000);
+    return () => window.clearTimeout(id);
+  }, [undo]);
+
+  /** Dragged order wins inside a section; otherwise the schedule's own order holds. */
+  const sortSection = (list: ScheduleItem[]) =>
+    [...list].sort(
+      (a, b) =>
+        (agendaOrder[a.id] ?? Number.MAX_SAFE_INTEGER) -
+        (agendaOrder[b.id] ?? Number.MAX_SAFE_INTEGER),
+    );
+
+  const swipeStatus = (item: ScheduleItem, status: Status) => {
+    setUndo({ id: item.id, title: item.title, prev: statusOf(item.id) });
+    setStatus(item.id, status);
+  };
+
   const renderList = (list: ScheduleItem[], tone?: "now") => (
-    <ul className="space-y-2">
-      {list.map((item) => (
+    <SortableSwipeList
+      items={sortSection(list)}
+      getId={(i) => i.id}
+      className="space-y-2"
+      keepLabel="Complete"
+      deleteLabel="Skip"
+      onReorder={(ids) => reorderAgenda(ids)}
+      onKeep={(item) => swipeStatus(item, "Complete")}
+      onDelete={(item) => swipeStatus(item, "Skipped")}
+      renderItem={(item) => (
         <AgendaCard
-          key={item.id}
           item={item}
           filter={filter}
           tone={tone ?? "default"}
@@ -77,8 +108,8 @@ function AgendaScreen() {
           onStatus={(s) => setStatus(item.id, s)}
           onOpen={() => setOpenId(item.id)}
         />
-      ))}
-    </ul>
+      )}
+    />
   );
 
   return (
@@ -170,6 +201,24 @@ function AgendaScreen() {
       )}
 
       <ItemSheet item={open} onClose={() => setOpenId(null)} />
+
+      {undo && (
+        <div className="fixed inset-x-3 bottom-24 z-40 flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-lg">
+          <span className="min-w-0 truncate text-[11px] text-muted-foreground">
+            {undo.title} updated
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setStatus(undo.id, undo.prev);
+              setUndo(null);
+            }}
+            className="shrink-0 rounded-md border border-primary px-3 py-1.5 text-[11px] font-bold text-primary uppercase"
+          >
+            Undo
+          </button>
+        </div>
+      )}
     </AppShell>
   );
 }
