@@ -161,8 +161,9 @@ function SearchScreen() {
         <EmptyState
           title={`No matches for “${query}”`}
           body="Try a shorter term, a room name, or a crew member. Filters above narrow results by type."
-          actionLabel={group === "all" ? undefined : "Search all types"}
-          onAction={group === "all" ? undefined : () => setGroup("all")}
+          {...(group === "all"
+            ? {}
+            : { actionLabel: "Search all types", onAction: () => setGroup("all") })}
         />
       ) : (
         <p className="num text-[11px] text-muted-foreground">
