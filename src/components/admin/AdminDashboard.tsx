@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { releasePdfFilenameFor } from "@/lib/release-pdf";
 import { deleteRelease, listReleases, signedFileUrl, type ReleaseRow } from "@/lib/release-supabase";
 
 const CSV_HEADERS = [
@@ -99,7 +100,23 @@ export function AdminDashboard() {
       return;
     }
     try {
-      window.open(await signedFileUrl("release-pdfs", row.pdf_path), "_blank");
+      const signedUrl = await signedFileUrl("release-pdfs", row.pdf_path);
+      const response = await fetch(signedUrl);
+      if (!response.ok) throw new Error(`PDF download failed (${response.status})`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = releasePdfFilenameFor(
+        row.release_id,
+        row.release_obtained_by,
+        row.signed_at,
+      );
+      anchor.style.display = "none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (err) {
       console.error(err);
       toast.error("Could not open the signed PDF.");
@@ -251,7 +268,7 @@ export function AdminDashboard() {
                   className="min-h-10"
                   onClick={() => void openPdf(row)}
                 >
-                  <Download className="h-4 w-4" aria-hidden="true" /> Signed PDF
+                  <Download className="h-4 w-4" aria-hidden="true" /> Download PDF
                 </Button>
                 <Button
                   size="sm"

@@ -242,23 +242,36 @@ function slug(value: string, fallback: string): string {
   return s || fallback;
 }
 
+export function releasePdfFilenameFor(
+  releaseId: string,
+  interviewer: string | null | undefined,
+  signedAtIso: string,
+): string {
+  const d = new Date(signedAtIso);
+  let stamp = "unknown-time";
+  if (!Number.isNaN(d.getTime())) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(d);
+    const value = (type: Intl.DateTimeFormatPartTypes) =>
+      parts.find((part) => part.type === type)?.value ?? "00";
+    stamp = `${value("year")}${value("month")}${value("day")}-${value("hour")}${value("minute")}`;
+  }
+  return `${slug(releaseId, "release")}_${slug(interviewer ?? "", "crew")}_${stamp}.pdf`;
+}
+
 export function releasePdfFilename(record: ReleaseRecord): string {
   const interviewer =
     record.kind === "adult"
       ? record.adult?.releaseObtainedBy
       : record.minor?.releaseObtainedBy;
-  const d = new Date(record.signedAtIso);
-  const stamp = Number.isNaN(d.getTime())
-    ? "unknown-time"
-    : [
-        d.getFullYear(),
-        String(d.getMonth() + 1).padStart(2, "0"),
-        String(d.getDate()).padStart(2, "0"),
-        "-",
-        String(d.getHours()).padStart(2, "0"),
-        String(d.getMinutes()).padStart(2, "0"),
-      ].join("");
-  return `${record.releaseId}_${slug(interviewer ?? "", "crew")}_${stamp}.pdf`;
+  return releasePdfFilenameFor(record.releaseId, interviewer, record.signedAtIso);
 }
 
 export async function deliverReleasePdf(
