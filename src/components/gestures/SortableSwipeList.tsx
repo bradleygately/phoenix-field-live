@@ -180,7 +180,11 @@ export function SortableSwipeList<T>({
   const moveOver = useCallback((dragged: string, clientY: number) => {
     const rows = Array.from(
       document.querySelectorAll<HTMLElement>("[data-row-id]"),
-    ).filter((el) => orderRef.current.includes(el.dataset["rowId"] ?? ""));
+    ).filter((el) => {
+      const rowId = el.dataset["rowId"] ?? "";
+      // The dragged row follows the finger, so it must not hit-test against itself.
+      return rowId !== dragged && orderRef.current.includes(rowId);
+    });
     const over = rows.find((el) => {
       const r = el.getBoundingClientRect();
       return clientY >= r.top && clientY <= r.bottom;
