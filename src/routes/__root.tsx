@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { registerAppServiceWorker, registerChunkErrorRecovery } from "../lib/pwa";
 import { THEME_BOOT_SCRIPT, ThemeProvider } from "../lib/theme";
+import { RecorderProvider } from "../lib/recorder";
 import { StoreProvider } from "../state/store";
 
 function NotFoundComponent() {
@@ -141,8 +142,10 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <StoreProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
+          <RecorderProvider>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+          </RecorderProvider>
         </StoreProvider>
       </ThemeProvider>
     </QueryClientProvider>
