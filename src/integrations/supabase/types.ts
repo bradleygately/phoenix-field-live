@@ -14,16 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      releases: {
+        Row: {
+          agreed_to_terms: boolean
+          camera_card_ref: string | null
+          contact_email: string
+          contact_phone: string
+          copy_requested: boolean
+          created_at: string
+          event_dates: string | null
+          event_name: string | null
+          event_venue: string | null
+          id: string
+          kind: string
+          minor_age: string | null
+          minor_assent_path: string | null
+          minor_dob: string | null
+          on_screen_name: string | null
+          organization: string | null
+          participant_name: string
+          pdf_path: string | null
+          project_title: string | null
+          relationship: string | null
+          release_id: string
+          release_obtained_by: string | null
+          restrictions: string | null
+          session_location: string | null
+          signature_path: string | null
+          signed_at: string
+          signer_name: string
+          updated_at: string
+        }
+        Insert: {
+          agreed_to_terms?: boolean
+          camera_card_ref?: string | null
+          contact_email: string
+          contact_phone: string
+          copy_requested?: boolean
+          created_at?: string
+          event_dates?: string | null
+          event_name?: string | null
+          event_venue?: string | null
+          id?: string
+          kind: string
+          minor_age?: string | null
+          minor_assent_path?: string | null
+          minor_dob?: string | null
+          on_screen_name?: string | null
+          organization?: string | null
+          participant_name: string
+          pdf_path?: string | null
+          project_title?: string | null
+          relationship?: string | null
+          release_id: string
+          release_obtained_by?: string | null
+          restrictions?: string | null
+          session_location?: string | null
+          signature_path?: string | null
+          signed_at?: string
+          signer_name: string
+          updated_at?: string
+        }
+        Update: {
+          agreed_to_terms?: boolean
+          camera_card_ref?: string | null
+          contact_email?: string
+          contact_phone?: string
+          copy_requested?: boolean
+          created_at?: string
+          event_dates?: string | null
+          event_name?: string | null
+          event_venue?: string | null
+          id?: string
+          kind?: string
+          minor_age?: string | null
+          minor_assent_path?: string | null
+          minor_dob?: string | null
+          on_screen_name?: string | null
+          organization?: string | null
+          participant_name?: string
+          pdf_path?: string | null
+          project_title?: string | null
+          relationship?: string | null
+          release_id?: string
+          release_obtained_by?: string | null
+          restrictions?: string | null
+          session_location?: string | null
+          signature_path?: string | null
+          signed_at?: string
+          signer_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +269,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+    },
   },
 } as const
