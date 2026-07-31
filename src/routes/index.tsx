@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
-import { SectionLabel } from "@/components/primitives";
+import { EmptyState, SectionLabel } from "@/components/primitives";
 import { AgendaCard } from "@/components/agenda/AgendaCard";
 import { ItemSheet } from "@/components/agenda/ItemSheet";
 import { CREW_LABEL, matchesCrew, type CrewFilter } from "@/components/agenda/agenda";
