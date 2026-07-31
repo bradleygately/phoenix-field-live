@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { SectionLabel } from "@/components/primitives";
@@ -69,6 +69,12 @@ function AgendaScreen() {
   const past = isToday ? items.filter((i) => i.endMin <= now.min) : [];
 
   const open = items.find((i) => i.id === openId) ?? null;
+
+  useEffect(() => {
+    if (!undo) return;
+    const id = window.setTimeout(() => setUndo(null), 6000);
+    return () => window.clearTimeout(id);
+  }, [undo]);
 
   /** Dragged order wins inside a section; otherwise the schedule's own order holds. */
   const sortSection = (list: ScheduleItem[]) =>
