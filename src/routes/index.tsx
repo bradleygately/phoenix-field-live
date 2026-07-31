@@ -53,6 +53,9 @@ function AgendaScreen() {
   const [undo, setUndo] = useState<{ id: string; title: string; prev: Status } | null>(
     null,
   );
+  // The clock ticks every second, so server HTML can never match the client.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const items = useMemo(
     () => itemsForDate(schedule, date).filter((i) => matchesCrew(i, filter)),
@@ -154,7 +157,8 @@ function AgendaScreen() {
       </div>
 
       <p className="num text-[11px] text-muted-foreground">
-        {DAY_LABELS[date]} · {isToday ? `now ${now.clock}` : "not today"}
+        {DAY_LABELS[date]} ·{" "}
+        {isToday ? `now ${mounted ? now.clock : "—"}` : "not today"}
       </p>
 
       {isToday && (
