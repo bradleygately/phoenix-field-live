@@ -151,6 +151,9 @@ export interface Interview {
   runningSince: number | null;
   elapsedMs: number;
   updatedAt: number;
+  /** IndexedDB key of the saved audio take, when one exists */
+  recordingKey?: string | undefined;
+  recordingMs?: number | undefined;
 }
 
 /* ------------------------------ gear / media ----------------------------- */
