@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -10,7 +10,8 @@ import { useStore } from "@/state/store";
 
 /** Two taps from anywhere: capture a note on the live block, or start an interview. */
 export function QuickCapture() {
-  const { schedule, now, role, addItemNote, deleteItemNote } = useStore();
+  const store = useStore();
+  const { schedule, now, role, addItemNote, deleteItemNote } = store;
   const [open, setOpen] = useState(false);
   const [interview, setInterview] = useState(false);
   const [text, setText] = useState("");
@@ -20,10 +21,13 @@ export function QuickCapture() {
     return pickLead(runningNow(items, now.min), role) ?? items.find((i) => i.startMin > now.min) ?? null;
   }, [now.date, now.min, role, schedule]);
 
+  const notesRef = useRef(store.itemNotesFor);
+  notesRef.current = store.itemNotesFor;
+
   const save = () => {
     const trimmed = text.trim();
     if (!trimmed || !nowItem) return;
-    const before = new Set((useStoreNoteIds(nowItem.id)));
+    const before = new Set(store.itemNotesFor(nowItem.id).map((n) => n.id));
     addItemNote(nowItem.id, trimmed);
     setText("");
     setOpen(false);
@@ -32,18 +36,13 @@ export function QuickCapture() {
       action: {
         label: "Undo",
         onClick: () => {
-          const added = useStoreNoteIds(nowItem.id).find((id) => !before.has(id));
-          if (added) deleteItemNote(added);
+          // Read through the ref so undo sees the note that was just written.
+          const added = notesRef.current(nowItem.id).find((n) => !before.has(n.id));
+          if (added) deleteItemNote(added.id);
         },
       },
     });
   };
-
-  // Reading straight from the live store avoids a stale closure on undo.
-  const store = useStore();
-  function useStoreNoteIds(itemId: string): string[] {
-    return store.itemNotesFor(itemId).map((n) => n.id);
-  }
 
   return (
     <>
