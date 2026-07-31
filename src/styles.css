@@ -2,7 +2,7 @@
 @source "../src";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is([data-theme="dark"] *));
 
 @theme {
   --font-sans:
@@ -134,7 +134,7 @@
 
 /* Dark (night) theme — PSI Games field palette: charcoal base, phoenix gold.
    Tuned for low-light readability: foreground/markers stay well above 4.5:1. */
-.dark {
+[data-theme="dark"] {
   --background: oklch(0.169 0.0075 268);
   --foreground: oklch(0.963 0.0025 258);
   --card: oklch(0.229 0.0075 268);

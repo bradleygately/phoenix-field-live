@@ -25,7 +25,7 @@ function systemDark(): boolean {
 }
 
 /** Runs before paint in the document head so the app never flashes the wrong theme. */
-export const THEME_BOOT_SCRIPT = `(function(){try{var p=localStorage.getItem(${JSON.stringify(THEME_KEY)});var d=p==="dark"||((!p||p==="system")&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){document.documentElement.classList.add("dark");}})();`;
+export const THEME_BOOT_SCRIPT = `(function(){try{var p=localStorage.getItem(${JSON.stringify(THEME_KEY)});var d=p==="dark"||((!p||p==="system")&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-theme",d?"dark":"light");}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();`;
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemePref>("system");
@@ -33,7 +33,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const apply = useCallback((pref: ThemePref) => {
     const dark = pref === "dark" || (pref === "system" && systemDark());
-    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
     setResolved(dark ? "dark" : "light");
   }, []);
 
