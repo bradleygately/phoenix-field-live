@@ -26,6 +26,7 @@ import {
   type FieldChange,
   type GearIssue,
   type Interview,
+  type ItemNote,
   type LogEntry,
   type MediaCard,
   type ScheduleItem,
@@ -65,6 +66,10 @@ interface StoreValue {
   setPosition: (crew: CrewId, room: string) => void;
   clearPosition: (crew: CrewId) => void;
   setNote: (itemId: string, note: string) => void;
+  itemNotesFor: (itemId: string) => ItemNote[];
+  addItemNote: (itemId: string, text: string) => void;
+  deleteItemNote: (noteId: string) => void;
+  restoreItemNote: (note: ItemNote) => void;
   reassign: (input: {
     item: ScheduleItem;
     who: CrewId;
@@ -235,6 +240,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const setNote = useCallback<StoreValue["setNote"]>((itemId, note) => {
     setCrew((prev) => ({ ...prev, notes: { ...prev.notes, [itemId]: note } }));
+  }, []);
+
+  const addItemNote = useCallback<StoreValue["addItemNote"]>(
+    (itemId, text) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      const note: ItemNote = {
+        id: uid(),
+        itemId,
+        text: trimmed,
+        author: role,
+        at: Date.now(),
+      };
+      setCrew((prev) => ({ ...prev, itemNotes: [note, ...(prev.itemNotes ?? [])] }));
+      addLog({ kind: "note", itemId, text: `Note added: ${trimmed}` });
+    },
+    [addLog, role],
+  );
+
+  const deleteItemNote = useCallback<StoreValue["deleteItemNote"]>((noteId) => {
+    setCrew((prev) => ({
+      ...prev,
+      itemNotes: (prev.itemNotes ?? []).filter((n) => n.id !== noteId),
+    }));
+  }, []);
+
+  const restoreItemNote = useCallback<StoreValue["restoreItemNote"]>((note) => {
+    setCrew((prev) => ({
+      ...prev,
+      itemNotes: [note, ...(prev.itemNotes ?? []).filter((n) => n.id !== note.id)].sort(
+        (a, b) => b.at - a.at,
+      ),
+    }));
   }, []);
 
   /** Offline edits are queued visibly and never silently dropped. */
@@ -467,6 +505,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setPosition,
     clearPosition,
     setNote,
+    itemNotesFor: (itemId) =>
+      (crew.itemNotes ?? []).filter((n) => n.itemId === itemId),
+    addItemNote,
+    deleteItemNote,
+    restoreItemNote,
     reassign,
     upsertInterview,
     patchInterview,

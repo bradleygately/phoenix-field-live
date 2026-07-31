@@ -202,6 +202,14 @@ export interface WrapDay {
 
 export type SyncState = "local" | "syncing" | "synced" | "conflict";
 
+export interface ItemNote {
+  id: string;
+  itemId: string;
+  text: string;
+  author: CrewId;
+  at: number;
+}
+
 export interface CrewPosition {
   room: string;
   at: number;
@@ -210,6 +218,8 @@ export interface CrewPosition {
 
 export interface CrewState {
   statuses: Record<string, Status>;
+  /** Multiple timestamped notes per schedule item. */
+  itemNotes: ItemNote[];
   changes: FieldChange[];
   log: LogEntry[];
   positions: { [K in CrewId]?: CrewPosition | undefined };
@@ -224,6 +234,7 @@ export interface CrewState {
 
 export const EMPTY_CREW_STATE: CrewState = {
   statuses: {},
+  itemNotes: [],
   changes: [],
   log: [],
   positions: {},

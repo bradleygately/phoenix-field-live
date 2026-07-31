@@ -31,11 +31,28 @@ function NotesScreen() {
   const { schedule, crew, setNote, addLog } = useStore();
   const [scratch, setScratch] = useState(crew.notes["scratch"] ?? "");
 
-  const withNotes = useMemo(
-    () =>
-      schedule.filter((i) => (crew.notes[i.id] ?? "").trim().length > 0),
-    [schedule, crew.notes],
-  );
+  const withNotes = useMemo(() => {
+    const list = crew.itemNotes ?? [];
+    return schedule
+      .map((item) => ({
+        item,
+        notes: [
+          ...list.filter((n) => n.itemId === item.id),
+          ...((crew.notes[item.id] ?? "").trim()
+            ? [
+                {
+                  id: `legacy-${item.id}`,
+                  itemId: item.id,
+                  text: crew.notes[item.id] as string,
+                  author: "brad" as const,
+                  at: 0,
+                },
+              ]
+            : []),
+        ],
+      }))
+      .filter((entry) => entry.notes.length > 0);
+  }, [schedule, crew.itemNotes, crew.notes]);
 
   return (
     <AppShell>
@@ -63,15 +80,22 @@ function NotesScreen() {
           </p>
         ) : (
           <ul className="space-y-2">
-            {withNotes.map((item) => (
+            {withNotes.map(({ item, notes }) => (
               <li key={item.id} className="rounded-lg border border-border bg-card p-3">
                 <p className="num text-[11px] text-muted-foreground">
                   {item.startLabel} · {item.room}
                 </p>
                 <p className="text-sm font-semibold">{item.title}</p>
-                <p className="mt-1 text-xs whitespace-pre-wrap text-muted-foreground">
-                  {crew.notes[item.id]}
-                </p>
+                <ul className="mt-1 space-y-1">
+                  {notes.map((n) => (
+                    <li
+                      key={n.id}
+                      className="text-xs whitespace-pre-wrap text-muted-foreground"
+                    >
+                      • {n.text}
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
           </ul>

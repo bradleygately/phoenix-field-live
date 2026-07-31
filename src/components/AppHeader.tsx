@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 
 import { PhoenixMark } from "./primitives";
 import { DAY_LABELS } from "@/lib/time";
+import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/state/store";
 
 export function AppHeader() {
   const { now, simOffsetMs } = useStore();
+  const { resolved, toggle } = useTheme();
   const dayLabel = DAY_LABELS[now.date] ?? now.weekday;
   // The clock ticks every second, so server HTML can never match the client.
   const [mounted, setMounted] = useState(false);
@@ -46,11 +48,23 @@ export function AppHeader() {
         <span
           className={cn(
             "num shrink-0 text-base font-semibold tabular-nums transition-colors duration-700",
-            now.isDay ? "text-gold-bright" : "text-muted-foreground",
+            now.isDay ? "text-gold-bright" : "text-foreground",
           )}
         >
           {mounted ? now.clock : ""}
         </span>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={
+            resolved === "dark" ? "Switch to light mode" : "Switch to dark mode"
+          }
+          className="tap -mr-1 flex shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-foreground"
+        >
+          <span aria-hidden="true" className="text-base leading-none">
+            {mounted ? (resolved === "dark" ? "☀" : "☾") : "☾"}
+          </span>
+        </button>
       </div>
     </header>
   );

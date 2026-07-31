@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
-import { Field, Sheet, TextArea, TextInput } from "@/components/Sheet";
+import { Field, Sheet, TextInput } from "@/components/Sheet";
 import { PriorityPill } from "@/components/primitives";
+import { ItemNotes } from "./ItemNotes";
 import { StatusControls } from "./StatusControls";
 import { CREW_LABEL } from "./agenda";
 import { useStore } from "@/state/store";
@@ -14,14 +15,12 @@ export function ItemSheet({
   item: ScheduleItem | null;
   onClose: () => void;
 }) {
-  const { statusOf, setStatus, setNote, crew, reassign } = useStore();
-  const [note, setLocalNote] = useState("");
+  const { statusOf, setStatus, reassign } = useStore();
   const [who, setWho] = useState<CrewId>("jesse");
   const [assignment, setAssignment] = useState("");
 
   useEffect(() => {
     if (!item) return;
-    setLocalNote(crew.notes[item.id] ?? "");
     setAssignment("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id]);
@@ -80,14 +79,7 @@ export function ItemSheet({
         />
       </Field>
 
-      <Field label="Notes">
-        <TextArea
-          value={note}
-          onChange={(e) => setLocalNote(e.target.value)}
-          onBlur={() => setNote(item.id, note)}
-          placeholder="Anything the crew needs to know"
-        />
-      </Field>
+      <ItemNotes itemId={item.id} />
 
       <Field label="Reassign crew">
         <div className="grid grid-cols-3 gap-1.5">

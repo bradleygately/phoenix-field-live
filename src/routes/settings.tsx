@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { Panel, SectionLabel, TapButton } from "@/components/primitives";
+import { useTheme, type ThemePref } from "@/lib/theme";
 import { SETTINGS_FIELDS } from "@/lib/settings";
 import { estimateTravel } from "@/lib/travel";
 import { formatMin, offsetForTargetMin, parseTimeInput } from "@/lib/time";
@@ -52,6 +53,10 @@ function SettingsScreen() {
 
   return (
     <AppShell>
+      <Panel className="space-y-2">
+        <SectionLabel>Appearance</SectionLabel>
+        <ThemePicker />
+      </Panel>
       <Panel className="space-y-2">
         <SectionLabel>Time simulator</SectionLabel>
         <p className="num text-xs">
@@ -166,5 +171,33 @@ function SettingsScreen() {
         </div>
       </Panel>
     </AppShell>
+  );
+}
+const THEME_OPTIONS: { id: ThemePref; label: string }[] = [
+  { id: "light", label: "Light" },
+  { id: "dark", label: "Dark" },
+  { id: "system", label: "System" },
+];
+
+function ThemePicker() {
+  const { theme, resolved, setTheme } = useTheme();
+  return (
+    <div className="space-y-1.5">
+      <div className="grid grid-cols-3 gap-1.5">
+        {THEME_OPTIONS.map((o) => (
+          <TapButton
+            key={o.id}
+            tone="gold"
+            active={theme === o.id}
+            onClick={() => setTheme(o.id)}
+          >
+            {o.label}
+          </TapButton>
+        ))}
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Currently showing {resolved} mode. Your choice is remembered on this device.
+      </p>
+    </div>
   );
 }
