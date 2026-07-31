@@ -6,7 +6,7 @@ export interface Building {
   lon: number;
 }
 
-export const BUILDINGS: Record<string, Building> = {
+const BUILDING_MAP: Record<string, Building> = {
   westin: {
     id: "westin",
     label: "The Westin Charlotte",
@@ -36,6 +36,17 @@ export const BUILDINGS: Record<string, Building> = {
     lon: -80.8453622,
   },
 };
+
+export const BUILDINGS = BUILDING_MAP as Record<string, Building> & {
+  westin: Building;
+  jw: Building;
+  element: Building;
+  home2: Building;
+};
+
+export function getBuilding(id: string): Building {
+  return BUILDING_MAP[id] ?? BUILDINGS.westin;
+}
 
 export const VENUE_NODES = [
   "Main Stage",
