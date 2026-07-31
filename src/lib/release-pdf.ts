@@ -1,0 +1,203 @@
+import {
+  ADULT_RELEASE_PARAGRAPHS,
+  ADULT_RELEASE_TITLE,
+  BRAND,
+  MINOR_RELEASE_PARAGRAPHS,
+  MINOR_RELEASE_TITLE,
+  PRIVACY_NOTE,
+} from "./release-content";
+import type { ReleaseRecord } from "./release-types";
+
+type Row = [string, string];
+
+function rowsFor(record: ReleaseRecord): Row[] {
+  if (record.kind === "adult" && record.adult) {
+    const a = record.adult;
+    return [
+      ["Full legal name", a.fullLegalName],
+      ["Preferred on-screen name / title", a.onScreenName || "—"],
+      ["Organization / affiliation", a.organization || "—"],
+      ["Email", a.email],
+      ["Mobile phone", a.phone],
+      ["Copy requested", a.copyRequested === "yes" ? "Yes" : "No"],
+      ["Release obtained by", a.releaseObtainedBy || "—"],
+      ["Session / location", a.sessionLocation || "—"],
+      ["Camera / card / file reference", a.cameraCardFileRef || "—"],
+    ];
+  }
+  const m = record.minor!;
+  return [
+    ["Minor full legal name", m.minorFullLegalName],
+    ["Date of birth", m.minorDob || "—"],
+    ["Age", m.minorAge || "—"],
+    ["Parent / guardian full name", m.guardianFullName],
+    ["Relationship to minor", m.relationship],
+    ["Guardian email", m.guardianEmail],
+    ["Guardian phone", m.guardianPhone],
+    ["Copy requested", m.copyRequested === "yes" ? "Yes" : "No"],
+    ["Release obtained by", m.releaseObtainedBy || "—"],
+    ["Session / location", m.sessionLocation || "—"],
+    ["Camera / card / file reference", m.cameraCardFileRef || "—"],
+  ];
+}
+
+export async function generateReleasePdf(record: ReleaseRecord) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 54;
+  const contentWidth = pageWidth - margin * 2;
+  let y = margin;
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageHeight - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const text = (
+    value: string,
+    opts: { size?: number; style?: "normal" | "bold"; gap?: number; width?: number } = {},
+  ) => {
+    const { size = 10, style = "normal", gap = 6, width = contentWidth } = opts;
+    doc.setFont("helvetica", style);
+    doc.setFontSize(size);
+    const lines = doc.splitTextToSize(value, width) as string[];
+    const lineHeight = size * 1.35;
+    ensureSpace(lines.length * lineHeight);
+    for (const line of lines) {
+      doc.text(line, margin, y);
+      y += lineHeight;
+    }
+    y += gap;
+  };
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.text(BRAND.company, margin, y);
+  y += 18;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.text(`${BRAND.program} — “${record.event.projectTitle}”`, margin, y);
+  y += 13;
+  doc.text(`${record.event.name} · ${record.event.venue} · ${record.event.dates}`, margin, y);
+  y += 13;
+  doc.text(`${BRAND.email} · ${BRAND.phone} · ${BRAND.website}`, margin, y);
+  y += 16;
+  doc.setDrawColor(20);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 24;
+
+  text(record.kind === "adult" ? ADULT_RELEASE_TITLE : MINOR_RELEASE_TITLE, {
+    size: 12.5,
+    style: "bold",
+    gap: 10,
+  });
+
+  text(`Release ID: ${record.releaseId}`, { size: 10, style: "bold", gap: 2 });
+  text(`Signed (local time): ${record.signedAtDisplay}`, { size: 10, gap: 14 });
+
+  text("PARTICIPANT INFORMATION", { size: 10.5, style: "bold", gap: 8 });
+  const labelWidth = 190;
+  for (const [label, value] of rowsFor(record)) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    const valueLines = doc.splitTextToSize(value || "—", contentWidth - labelWidth) as string[];
+    ensureSpace(valueLines.length * 13 + 2);
+    doc.text(label, margin, y);
+    doc.setFont("helvetica", "normal");
+    let vy = y;
+    for (const line of valueLines) {
+      doc.text(line, margin + labelWidth, vy);
+      vy += 13;
+    }
+    y = vy + 2;
+  }
+  y += 10;
+
+  const restrictions =
+    (record.kind === "adult" ? record.adult?.restrictions : record.minor?.restrictions) || "";
+  text("AGREED LIMITATIONS / RESTRICTIONS", { size: 10.5, style: "bold", gap: 6 });
+  text(restrictions.trim() ? restrictions.trim() : "None stated.", { size: 10, gap: 16 });
+
+  text("RELEASE TERMS", { size: 10.5, style: "bold", gap: 8 });
+  const paragraphs = record.kind === "adult" ? ADULT_RELEASE_PARAGRAPHS : MINOR_RELEASE_PARAGRAPHS;
+  for (const paragraph of paragraphs) {
+    text(paragraph, { size: 9.5, gap: 9 });
+  }
+
+  ensureSpace(170);
+  y += 6;
+  text("SIGNATURE", { size: 10.5, style: "bold", gap: 8 });
+  text(
+    record.agreedToTerms
+      ? "The signer confirmed by checkbox that they have read this release and voluntarily agree to its terms."
+      : "Agreement checkbox not recorded.",
+    { size: 9, gap: 10 },
+  );
+
+  const sigWidth = 240;
+  const sigHeight = 90;
+  if (record.signatureDataUrl) {
+    ensureSpace(sigHeight + 40);
+    doc.addImage(record.signatureDataUrl, "PNG", margin, y, sigWidth, sigHeight);
+    doc.line(margin, y + sigHeight + 4, margin + sigWidth, y + sigHeight + 4);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    const caption =
+      record.kind === "adult"
+        ? `${record.adult?.fullLegalName ?? ""} (participant)`
+        : `${record.minor?.guardianFullName ?? ""} (parent / legal guardian)`;
+    doc.text(caption, margin, y + sigHeight + 18);
+    doc.text(`Date / time: ${record.signedAtDisplay}`, margin, y + sigHeight + 31);
+    y += sigHeight + 46;
+  }
+
+  if (record.minorAssentSignatureDataUrl) {
+    ensureSpace(sigHeight + 40);
+    doc.addImage(record.minorAssentSignatureDataUrl, "PNG", margin, y, sigWidth, sigHeight);
+    doc.line(margin, y + sigHeight + 4, margin + sigWidth, y + sigHeight + 4);
+    doc.setFontSize(9);
+    doc.text(
+      `${record.minor?.minorFullLegalName ?? ""} (minor assent, age-appropriate)`,
+      margin,
+      y + sigHeight + 18,
+    );
+    y += sigHeight + 34;
+  }
+
+  y += 10;
+  text(PRIVACY_NOTE, { size: 8, gap: 4 });
+
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i += 1) {
+    doc.setPage(i);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(
+      `${BRAND.company} · Release ${record.releaseId} · Page ${i} of ${pages}`,
+      margin,
+      pageHeight - 26,
+    );
+  }
+
+  return doc;
+}
+
+export async function downloadReleasePdf(record: ReleaseRecord) {
+  const doc = await generateReleasePdf(record);
+  doc.save(`${record.releaseId}.pdf`);
+}
+
+export async function printReleasePdf(record: ReleaseRecord) {
+  const doc = await generateReleasePdf(record);
+  const url = doc.output("bloburl");
+  window.open(url as unknown as string, "_blank");
+}
+
+export async function releasePdfBlob(record: ReleaseRecord): Promise<Blob> {
+  const doc = await generateReleasePdf(record);
+  return doc.output("blob");
+}
