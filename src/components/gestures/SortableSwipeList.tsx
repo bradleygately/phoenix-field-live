@@ -19,7 +19,7 @@ interface RowProps {
   sortable?: boolean;
   dragging?: boolean;
   dragOffset?: number;
-  onDragStart?: ((id: string) => void) | undefined;
+  onDragStart?: ((id: string, clientY: number) => void) | undefined;
 }
 
 /**
@@ -67,7 +67,7 @@ export function SwipeRow({
         if (sortable && onDragStart) {
           hold.current = window.setTimeout(() => {
             mode.current = "drag";
-            onDragStart(id);
+            onDragStart(id, start.current?.y ?? 0);
             if (navigator.vibrate) navigator.vibrate(10);
           }, HOLD_MS);
         }
@@ -243,11 +243,8 @@ export function SortableSwipeList<T>({
             sortable={Boolean(onReorder)}
             dragging={dragId === id}
             dragOffset={dragId === id ? dragOffset : 0}
-            onDragStart={(rowId) => {
-              const el = document.querySelector<HTMLElement>(`[data-row-id="${rowId}"]`);
-              dragStartY.current = el
-                ? el.getBoundingClientRect().top + el.offsetHeight / 2
-                : 0;
+            onDragStart={(rowId, clientY) => {
+              dragStartY.current = clientY;
               setDragOffset(0);
               setDragId(rowId);
             }}
