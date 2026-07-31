@@ -1,6 +1,7 @@
 import {
   BUILDINGS,
   DEFAULT_SETTINGS,
+  getBuilding,
   roomMinutes,
   type Building,
   type TravelSettings,
@@ -113,8 +114,8 @@ export function estimateTravel(
   }
 
   if (from.building !== to.building) {
-    const a = BUILDINGS[from.building];
-    const b = BUILDINGS[to.building];
+    const a = getBuilding(from.building);
+    const b = getBuilding(to.building);
     const meters = haversineMeters(a, b) * settings.gridFactor;
     const speed = carryingRig ? settings.walkRig : settings.walkLight;
     const walk = meters / speed;
