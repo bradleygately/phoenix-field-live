@@ -298,6 +298,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  /** Manual note order set by dragging tiles. */
+  const reorderItemNotes = useCallback<StoreValue["reorderItemNotes"]>((ids) => {
+    setCrew((prev) => {
+      const rank = new Map(ids.map((id, index) => [id, index]));
+      return {
+        ...prev,
+        itemNotes: (prev.itemNotes ?? []).map((n) =>
+          rank.has(n.id) ? { ...n, order: rank.get(n.id)! } : n,
+        ),
+      };
+    });
+  }, []);
+
   const reassign = useCallback<StoreValue["reassign"]>(
     ({ item, who, assignment, committed, reason, effective }) => {
       const officialAssignment = String(item[who] ?? "");
@@ -551,11 +564,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     itemNotesFor: (itemId) =>
       (crew.itemNotes ?? [])
         .filter((n) => n.itemId === itemId)
-        .sort((a, b) => Number(Boolean(b.kept)) - Number(Boolean(a.kept)) || b.at - a.at),
+        .sort(
+          (a, b) =>
+            // A dragged order wins; otherwise kept notes float up, then newest first.
+            (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER) ||
+            Number(Boolean(b.kept)) - Number(Boolean(a.kept)) ||
+            b.at - a.at,
+        ),
     addItemNote,
     deleteItemNote,
     keepItemNote,
     restoreItemNote,
+    reorderItemNotes,
     reassign,
     upsertInterview,
     patchInterview,
