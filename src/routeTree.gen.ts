@@ -16,6 +16,7 @@ import { Route as LogRouteImport } from './routes/log'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as MoreRouteImport } from './routes/more'
 import { Route as NotesRouteImport } from './routes/notes'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TimelineRouteImport } from './routes/timeline'
 import { Route as WrapRouteImport } from './routes/wrap'
@@ -58,6 +59,11 @@ const NotesRoute = NotesRouteImport.update({
   path: '/notes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/map': typeof MapRoute
   '/more': typeof MoreRoute
   '/notes': typeof NotesRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/map': typeof MapRoute
   '/more': typeof MoreRoute
   '/notes': typeof NotesRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/map': typeof MapRoute
   '/more': typeof MoreRoute
   '/notes': typeof NotesRoute
+  '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/more'
     | '/notes'
+    | '/search'
     | '/settings'
     | '/timeline'
     | '/wrap'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/more'
     | '/notes'
+    | '/search'
     | '/settings'
     | '/timeline'
     | '/wrap'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/more'
     | '/notes'
+    | '/search'
     | '/settings'
     | '/timeline'
     | '/wrap'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   MapRoute: typeof MapRoute
   MoreRoute: typeof MoreRoute
   NotesRoute: typeof NotesRoute
+  SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   TimelineRoute: typeof TimelineRoute
   WrapRoute: typeof WrapRoute
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       path: '/notes'
       fullPath: '/notes'
       preLoaderRoute: typeof NotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -312,6 +332,7 @@ const rootRouteChildren: RootRouteChildren = {
   MapRoute: MapRoute,
   MoreRoute: MoreRoute,
   NotesRoute: NotesRoute,
+  SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   TimelineRoute: TimelineRoute,
   WrapRoute: WrapRoute,
@@ -319,13 +340,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
