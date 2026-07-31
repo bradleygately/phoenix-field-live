@@ -34,24 +34,24 @@ export interface ScheduleItem {
   startLabel: string;
   endLabel: string;
   title: string;
-  presenter?: string;
+  presenter?: string | undefined;
   /** Room exactly as printed in the official program. Never mutated. */
   roomOfficial: string;
   /** Operational room (may be changed by the crew). */
   room: string;
   priority: Priority;
   kind: Kind;
-  jesse?: string;
-  duane?: string;
-  brad?: string;
-  goal?: string;
-  release?: string;
-  minors?: boolean;
-  incomplete?: boolean;
+  jesse?: string | undefined;
+  duane?: string | undefined;
+  brad?: string | undefined;
+  goal?: string | undefined;
+  release?: string | undefined;
+  minors?: boolean | undefined;
+  incomplete?: boolean | undefined;
   /** This block is itself a move/transit block. */
-  move?: boolean;
+  move?: boolean | undefined;
   /** Soft timing — start/end are approximate. */
-  soft?: boolean;
+  soft?: boolean | undefined;
   commit: Commit;
 }
 
@@ -65,12 +65,12 @@ export interface FieldChange {
   editor: CrewId;
   at: number;
   reason: string;
-  reverted?: boolean;
+  reverted?: boolean | undefined;
 }
 
 export interface LogEntry {
   id: string;
-  itemId?: string;
+  itemId?: string | undefined;
   kind:
     | "status"
     | "change"
@@ -95,7 +95,7 @@ export interface CrewState {
   statuses: Record<string, Status>;
   changes: FieldChange[];
   log: LogEntry[];
-  positions: Partial<Record<CrewId, CrewPosition>>;
+  positions: { [K in CrewId]?: CrewPosition | undefined };
   notes: Record<string, string>;
 }
 
