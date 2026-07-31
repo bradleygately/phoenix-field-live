@@ -64,6 +64,9 @@ function SettingsScreen() {
     epochMs,
   } = useStore();
   const [jump, setJump] = useState("12:35 PM");
+  // The clock ticks every second, so server HTML can never match the client.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <AppShell>
@@ -74,8 +77,8 @@ function SettingsScreen() {
       <Panel className="space-y-2">
         <SectionLabel>Time simulator</SectionLabel>
         <p className="num text-xs">
-          Charlotte (ET) now: <span className="font-bold">{now.clock}</span> ·{" "}
-          {now.date}
+          Charlotte (ET) now:{" "}
+          <span className="font-bold">{mounted ? now.clock : "—"}</span> · {now.date}
         </p>
         <div className="flex gap-1.5">
           <input

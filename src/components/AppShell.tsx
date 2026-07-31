@@ -19,7 +19,7 @@ export function AppShell({
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[560px] flex-col bg-background">
       <AppHeader />
-      <main className="flex-1 space-y-3 px-3 pt-3 pb-28">
+      <main className="flex-1 space-y-3 px-3 pt-3 pb-36">
         <LeaveByAlert />
         {children}
       </main>
