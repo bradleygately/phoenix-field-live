@@ -9,8 +9,8 @@ export function AppShell({
   onWarnings,
 }: {
   children: ReactNode;
-  warningCount?: number;
-  onWarnings?: () => void;
+  warningCount?: number | undefined;
+  onWarnings?: (() => void) | undefined;
 }) {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[560px] flex-col bg-background">
