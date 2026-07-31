@@ -71,6 +71,7 @@ interface StoreValue {
   deleteItemNote: (noteId: string) => void;
   keepItemNote: (noteId: string) => void;
   restoreItemNote: (note: ItemNote) => void;
+  reorderItemNotes: (ids: string[]) => void;
   reassign: (input: {
     item: ScheduleItem;
     who: CrewId;
