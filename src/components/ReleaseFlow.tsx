@@ -548,6 +548,23 @@ function reviewRows(
 }
 
 function Confirmation({ record }: { record: ReleaseRecord }) {
+  const [busy, setBusy] = useState<"download" | "print" | null>(null);
+  const [error, setError] = useState("");
+
+  async function run(kind: "download" | "print") {
+    setBusy(kind);
+    setError("");
+    try {
+      if (kind === "download") await downloadReleasePdf(record);
+      else await printReleasePdf(record);
+    } catch (err) {
+      console.error("[release-pdf]", err);
+      setError("Could not build the PDF on this device. Try again, or use Print.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 text-center">
       <CheckCircle2 className="mx-auto h-14 w-14 text-primary" aria-hidden="true" />
@@ -569,17 +586,28 @@ function Confirmation({ record }: { record: ReleaseRecord }) {
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Button className="min-h-12 flex-1 font-bold" onClick={() => void downloadReleasePdf(record)}>
-          <Download className="h-4 w-4" aria-hidden="true" /> Download signed PDF
+        <Button
+          className="min-h-12 flex-1 font-bold"
+          disabled={busy !== null}
+          onClick={() => void run("download")}
+        >
+          <Download className="h-4 w-4" aria-hidden="true" />{" "}
+          {busy === "download" ? "Preparing PDF…" : "Download signed PDF"}
         </Button>
         <Button
           variant="outline"
           className="min-h-12 flex-1"
-          onClick={() => void printReleasePdf(record)}
+          disabled={busy !== null}
+          onClick={() => void run("print")}
         >
-          <Printer className="h-4 w-4" aria-hidden="true" /> Print
+          <Printer className="h-4 w-4" aria-hidden="true" /> {busy === "print" ? "Opening…" : "Print"}
         </Button>
       </div>
+      {error && (
+        <p className="mt-3 text-xs font-semibold text-destructive" role="alert">
+          {error}
+        </p>
+      )}
 
       <p className="mt-8 flex items-start gap-2 text-left text-xs text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
