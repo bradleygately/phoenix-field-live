@@ -233,12 +233,40 @@ function triggerBlobDownload(url: string, filename: string, blob: Blob): boolean
  * download, or a new tab. Always returns a blob URL so the UI can render a
  * tappable fallback link (embedded previews block programmatic downloads).
  */
+function slug(value: string, fallback: string): string {
+  const s = value
+    .normalize("NFKD")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+  return s || fallback;
+}
+
+export function releasePdfFilename(record: ReleaseRecord): string {
+  const interviewer =
+    record.kind === "adult"
+      ? record.adult?.releaseObtainedBy
+      : record.minor?.releaseObtainedBy;
+  const d = new Date(record.signedAtIso);
+  const stamp = Number.isNaN(d.getTime())
+    ? "unknown-time"
+    : [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, "0"),
+        String(d.getDate()).padStart(2, "0"),
+        "-",
+        String(d.getHours()).padStart(2, "0"),
+        String(d.getMinutes()).padStart(2, "0"),
+      ].join("");
+  return `${record.releaseId}_${slug(interviewer ?? "", "crew")}_${stamp}.pdf`;
+}
+
 export async function deliverReleasePdf(
   record: ReleaseRecord,
   mode: "download" | "print" = "download",
 ): Promise<{ url: string; filename: string; delivery: PdfDelivery }> {
   const blob = await releasePdfBlob(record);
-  const filename = `${record.releaseId}.pdf`;
+  const filename = releasePdfFilename(record);
   const url = URL.createObjectURL(blob);
 
   if (mode === "download") {
