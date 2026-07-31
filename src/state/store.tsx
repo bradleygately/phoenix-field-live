@@ -69,6 +69,7 @@ interface StoreValue {
   itemNotesFor: (itemId: string) => ItemNote[];
   addItemNote: (itemId: string, text: string) => void;
   deleteItemNote: (noteId: string) => void;
+  keepItemNote: (noteId: string) => void;
   restoreItemNote: (note: ItemNote) => void;
   reassign: (input: {
     item: ScheduleItem;
@@ -81,6 +82,9 @@ interface StoreValue {
   upsertInterview: (interview: Interview) => void;
   patchInterview: (id: string, patch: Partial<Interview>, note?: string) => void;
   toggleInterviewTimer: (id: string) => void;
+  deleteInterview: (id: string) => void;
+  restoreInterview: (interview: Interview) => void;
+  reorderInterviews: (ids: string[]) => void;
   upsertCard: (card: MediaCard) => void;
   setCardState: (id: string, state: CardState) => boolean;
   addGear: (issue: Omit<GearIssue, "id" | "at" | "resolved">) => void;
@@ -266,6 +270,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const keepItemNote = useCallback<StoreValue["keepItemNote"]>((noteId) => {
+    setCrew((prev) => ({
+      ...prev,
+      itemNotes: (prev.itemNotes ?? []).map((n) =>
+        n.id === noteId ? { ...n, kept: true } : n,
+      ),
+    }));
+  }, []);
+
   const restoreItemNote = useCallback<StoreValue["restoreItemNote"]>((note) => {
     setCrew((prev) => ({
       ...prev,
@@ -379,6 +392,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     [addLog, crew.interviews],
   );
+
+  const deleteInterview = useCallback<StoreValue["deleteInterview"]>((id) => {
+    setCrew((prev) => ({
+      ...prev,
+      interviews: prev.interviews.filter((i) => i.id !== id),
+    }));
+  }, []);
+
+  const restoreInterview = useCallback<StoreValue["restoreInterview"]>((interview) => {
+    setCrew((prev) => ({
+      ...prev,
+      interviews: [interview, ...prev.interviews.filter((i) => i.id !== interview.id)],
+    }));
+  }, []);
+
+  /** Manual priority order set by dragging tiles. Persisted like everything else. */
+  const reorderInterviews = useCallback<StoreValue["reorderInterviews"]>((ids) => {
+    setCrew((prev) => {
+      const rank = new Map(ids.map((id, index) => [id, index]));
+      return {
+        ...prev,
+        interviews: [...prev.interviews].sort(
+          (a, b) =>
+            (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+            (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+        ),
+      };
+    });
+  }, []);
 
   const upsertCard = useCallback<StoreValue["upsertCard"]>(
     (card) => {
@@ -506,14 +548,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     clearPosition,
     setNote,
     itemNotesFor: (itemId) =>
-      (crew.itemNotes ?? []).filter((n) => n.itemId === itemId),
+      (crew.itemNotes ?? [])
+        .filter((n) => n.itemId === itemId)
+        .sort((a, b) => Number(Boolean(b.kept)) - Number(Boolean(a.kept)) || b.at - a.at),
     addItemNote,
     deleteItemNote,
+    keepItemNote,
     restoreItemNote,
     reassign,
     upsertInterview,
     patchInterview,
     toggleInterviewTimer,
+    deleteInterview,
+    restoreInterview,
+    reorderInterviews,
     upsertCard,
     setCardState,
     addGear,
