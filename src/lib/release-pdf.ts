@@ -186,18 +186,56 @@ export async function generateReleasePdf(record: ReleaseRecord) {
   return doc;
 }
 
+function triggerBlobDownload(blob: Blob, filename: string) {
+  // Some mobile / in-app browsers ignore jsPDF's internal save(); drive the
+  // download from a real object URL so the file always lands on the device.
+  const nav = window.navigator as Navigator & {
+    msSaveOrOpenBlob?: (b: Blob, name: string) => void;
+  };
+  if (typeof nav.msSaveOrOpenBlob === "function") {
+    nav.msSaveOrOpenBlob(blob, filename);
+    return;
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  // iOS Safari does not honour the download attribute; open the PDF so the
+  // user can still save or share it from the viewer.
+  const supportsDownload = "download" in HTMLAnchorElement.prototype;
+  const isIos =
+    /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (!supportsDownload || isIos) window.open(url, "_blank");
+
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 export async function downloadReleasePdf(record: ReleaseRecord) {
-  const doc = await generateReleasePdf(record);
-  doc.save(`${record.releaseId}.pdf`);
+  const blob = await releasePdfBlob(record);
+  triggerBlobDownload(blob, `${record.releaseId}.pdf`);
 }
 
 export async function printReleasePdf(record: ReleaseRecord) {
-  const doc = await generateReleasePdf(record);
-  const url = doc.output("bloburl");
-  window.open(url as unknown as string, "_blank");
+  const blob = await releasePdfBlob(record);
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  if (!win) {
+    // Popup blocked (common inside kiosk / in-app browsers): fall back to a download.
+    triggerBlobDownload(blob, `${record.releaseId}.pdf`);
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export async function releasePdfBlob(record: ReleaseRecord): Promise<Blob> {
   const doc = await generateReleasePdf(record);
-  return doc.output("blob");
+  const buffer = doc.output("arraybuffer");
+  return new Blob([buffer], { type: "application/pdf" });
 }
