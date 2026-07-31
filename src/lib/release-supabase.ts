@@ -159,16 +159,3 @@ export async function deleteRelease(row: ReleaseRow) {
   if (error) throw error;
 }
 
-export async function isCurrentUserAdmin(): Promise<boolean> {
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData.user;
-  if (!user) return false;
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("role", "admin")
-    .maybeSingle();
-  if (error) return false;
-  return Boolean(data);
-}
