@@ -159,6 +159,7 @@ export function SortableSwipeList<T>({
   const ids = items.map(getId);
   const [order, setOrder] = useState<string[]>(ids);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
   const key = ids.join("|");
 
   useEffect(() => {
@@ -168,14 +169,18 @@ export function SortableSwipeList<T>({
 
   const orderRef = useRef(order);
   orderRef.current = order;
+  const dragStartY = useRef(0);
+  const onReorderRef = useRef(onReorder);
+  onReorderRef.current = onReorder;
 
   const byId = new Map(items.map((i) => [getId(i), i]));
   const ordered = order.map((id) => byId.get(id)).filter(Boolean) as T[];
 
-  const moveOver = (dragged: string, clientY: number) => {
+  // Ref-stable so the window listeners never read a stale order snapshot.
+  const moveOver = useCallback((dragged: string, clientY: number) => {
     const rows = Array.from(
       document.querySelectorAll<HTMLElement>("[data-row-id]"),
-    ).filter((el) => order.includes(el.dataset["rowId"] ?? ""));
+    ).filter((el) => orderRef.current.includes(el.dataset["rowId"] ?? ""));
     const over = rows.find((el) => {
       const r = el.getBoundingClientRect();
       return clientY >= r.top && clientY <= r.bottom;
@@ -190,27 +195,39 @@ export function SortableSwipeList<T>({
       next.splice(to, 0, next.splice(from, 1)[0]!);
       return next;
     });
-  };
+    // The dragged row jumped to its new slot, so restart the finger offset there.
+    dragStartY.current = clientY;
+    setDragOffset(0);
+  }, []);
 
   // Drag tracking lives on the window: reordering moves the row's DOM node, which
   // would otherwise drop the pointer capture mid-drag.
   useEffect(() => {
     if (!dragId) return;
     const move = (e: PointerEvent) => {
-      e.preventDefault();
+      setDragOffset(e.clientY - dragStartY.current);
       moveOver(dragId, e.clientY);
     };
+    // Touch scrolling was already allowed at touchstart, so block it explicitly
+    // for the life of the drag instead of relying on touch-action alone.
+    const blockScroll = (e: TouchEvent) => e.preventDefault();
     const end = () => {
+      setDragOffset(0);
       setDragId(null);
-      onReorder?.(orderRef.current);
+      onReorderRef.current?.(orderRef.current);
     };
     window.addEventListener("pointermove", move, { passive: false });
     window.addEventListener("pointerup", end);
     window.addEventListener("pointercancel", end);
+    document.addEventListener("touchmove", blockScroll, { passive: false });
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.userSelect = "none";
     return () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", end);
       window.removeEventListener("pointercancel", end);
+      document.removeEventListener("touchmove", blockScroll);
+      document.body.style.userSelect = prevSelect;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dragId]);
@@ -225,7 +242,15 @@ export function SortableSwipeList<T>({
             id={id}
             sortable={Boolean(onReorder)}
             dragging={dragId === id}
-            onDragStart={setDragId}
+            dragOffset={dragId === id ? dragOffset : 0}
+            onDragStart={(rowId) => {
+              const el = document.querySelector<HTMLElement>(`[data-row-id="${rowId}"]`);
+              dragStartY.current = el
+                ? el.getBoundingClientRect().top + el.offsetHeight / 2
+                : 0;
+              setDragOffset(0);
+              setDragId(rowId);
+            }}
             onDelete={onDelete ? () => onDelete(item) : undefined}
             onKeep={onKeep ? () => onKeep(item) : undefined}
             {...(keepLabel ? { keepLabel } : {})}
