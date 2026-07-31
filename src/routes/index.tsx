@@ -71,6 +71,14 @@ function AgendaScreen() {
   const laterItems = future.slice(nextItems.length);
   const past = isToday ? items.filter((i) => i.endMin <= now.min) : [];
 
+  const doneCount = items.filter((i) => {
+    const s = statusOf(i.id);
+    return s === "Complete" || s === "Skipped";
+  }).length;
+  const pct = items.length > 0 ? Math.round((doneCount / items.length) * 100) : 0;
+  const nowId = nowItems[0]?.id;
+  const nextId = nextItems[0]?.id;
+
   const open = items.find((i) => i.id === openId) ?? null;
 
   useEffect(() => {
@@ -107,8 +115,17 @@ function AgendaScreen() {
           item={item}
           filter={filter}
           tone={tone ?? "default"}
+          marker={
+            isToday
+              ? item.id === nowId
+                ? "NOW"
+                : item.id === nextId
+                  ? "NEXT"
+                  : undefined
+              : undefined
+          }
           status={statusOf(item.id)}
-          onStatus={(s) => setStatus(item.id, s)}
+          onStatus={(s) => swipeStatus(item, s)}
           onOpen={() => setOpenId(item.id)}
         />
       )}
@@ -156,10 +173,27 @@ function AgendaScreen() {
         ))}
       </div>
 
-      <p className="num text-[11px] text-muted-foreground">
-        {DAY_LABELS[date]} ·{" "}
-        {isToday ? `now ${mounted ? now.clock : "—"}` : "not today"}
-      </p>
+      <div className="space-y-1.5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+          <p className="num min-w-0 truncate text-[11px] text-muted-foreground">
+            {DAY_LABELS[date]} ·{" "}
+            {isToday ? `now ${mounted ? now.clock : "—"}` : "not today"}
+          </p>
+          <p className="num shrink-0 text-[11px] font-bold">
+            {doneCount}/{items.length} done
+          </p>
+        </div>
+        <div
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Day progress"
+          className="h-1.5 w-full overflow-hidden rounded-full bg-secondary"
+        >
+          <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
 
       {isToday && (
         <section>
@@ -199,9 +233,16 @@ function AgendaScreen() {
       )}
 
       {items.length === 0 && (
-        <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-          No blocks for this filter.
-        </p>
+        <EmptyState
+          title="No blocks for this filter"
+          body={
+            filter === "all"
+              ? "This day has no scheduled coverage yet."
+              : `${CREW_LABEL[filter as Exclude<CrewFilter, "all">]} has nothing assigned on this day.`
+          }
+          actionLabel="Show all crew"
+          onAction={() => setFilter("all")}
+        />
       )}
 
       <ItemSheet item={open} onClose={() => setOpenId(null)} />
