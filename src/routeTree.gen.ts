@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EventRouteImport } from './routes/event'
 import { Route as InterviewsRouteImport } from './routes/interviews'
 import { Route as LogRouteImport } from './routes/log'
 import { Route as MapRouteImport } from './routes/map'
@@ -18,10 +19,18 @@ import { Route as NotesRouteImport } from './routes/notes'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TimelineRouteImport } from './routes/timeline'
 import { Route as WrapRouteImport } from './routes/wrap'
+import { Route as EventIndexRouteImport } from './routes/event.index'
+import { Route as EventCompetitionsRouteImport } from './routes/event.competitions'
+import { Route as EventSpeakersRouteImport } from './routes/event.speakers'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventRoute = EventRouteImport.update({
+  id: '/event',
+  path: '/event',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InterviewsRoute = InterviewsRouteImport.update({
@@ -64,9 +73,25 @@ const WrapRoute = WrapRouteImport.update({
   path: '/wrap',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventIndexRoute = EventIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EventRoute,
+} as any)
+const EventCompetitionsRoute = EventCompetitionsRouteImport.update({
+  id: '/competitions',
+  path: '/competitions',
+  getParentRoute: () => EventRoute,
+} as any)
+const EventSpeakersRoute = EventSpeakersRouteImport.update({
+  id: '/speakers',
+  path: '/speakers',
+  getParentRoute: () => EventRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/event': typeof EventRouteWithChildren
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
   '/map': typeof MapRoute
@@ -75,6 +100,9 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
+  '/event/competitions': typeof EventCompetitionsRoute
+  '/event/speakers': typeof EventSpeakersRoute
+  '/event/': typeof EventIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,10 +114,14 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
+  '/event/competitions': typeof EventCompetitionsRoute
+  '/event/speakers': typeof EventSpeakersRoute
+  '/event': typeof EventIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/event': typeof EventRouteWithChildren
   '/interviews': typeof InterviewsRoute
   '/log': typeof LogRoute
   '/map': typeof MapRoute
@@ -98,11 +130,15 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/timeline': typeof TimelineRoute
   '/wrap': typeof WrapRoute
+  '/event/competitions': typeof EventCompetitionsRoute
+  '/event/speakers': typeof EventSpeakersRoute
+  '/event/': typeof EventIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/event'
     | '/interviews'
     | '/log'
     | '/map'
@@ -111,6 +147,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/timeline'
     | '/wrap'
+    | '/event/competitions'
+    | '/event/speakers'
+    | '/event/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,9 +161,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/timeline'
     | '/wrap'
+    | '/event/competitions'
+    | '/event/speakers'
+    | '/event'
   id:
     | '__root__'
     | '/'
+    | '/event'
     | '/interviews'
     | '/log'
     | '/map'
@@ -133,10 +176,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/timeline'
     | '/wrap'
+    | '/event/competitions'
+    | '/event/speakers'
+    | '/event/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EventRoute: typeof EventRouteWithChildren
   InterviewsRoute: typeof InterviewsRoute
   LogRoute: typeof LogRoute
   MapRoute: typeof MapRoute
@@ -154,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/event': {
+      id: '/event'
+      path: '/event'
+      fullPath: '/event'
+      preLoaderRoute: typeof EventRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/interviews': {
@@ -212,11 +266,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WrapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/event/': {
+      id: '/event/'
+      path: '/'
+      fullPath: '/event/'
+      preLoaderRoute: typeof EventIndexRouteImport
+      parentRoute: typeof EventRoute
+    }
+    '/event/competitions': {
+      id: '/event/competitions'
+      path: '/competitions'
+      fullPath: '/event/competitions'
+      preLoaderRoute: typeof EventCompetitionsRouteImport
+      parentRoute: typeof EventRoute
+    }
+    '/event/speakers': {
+      id: '/event/speakers'
+      path: '/speakers'
+      fullPath: '/event/speakers'
+      preLoaderRoute: typeof EventSpeakersRouteImport
+      parentRoute: typeof EventRoute
+    }
   }
 }
 
+interface EventRouteChildren {
+  EventCompetitionsRoute: typeof EventCompetitionsRoute
+  EventSpeakersRoute: typeof EventSpeakersRoute
+  EventIndexRoute: typeof EventIndexRoute
+}
+
+const EventRouteChildren: EventRouteChildren = {
+  EventCompetitionsRoute: EventCompetitionsRoute,
+  EventSpeakersRoute: EventSpeakersRoute,
+  EventIndexRoute: EventIndexRoute,
+}
+
+const EventRouteWithChildren = EventRoute._addFileChildren(EventRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EventRoute: EventRouteWithChildren,
   InterviewsRoute: InterviewsRoute,
   LogRoute: LogRoute,
   MapRoute: MapRoute,
@@ -229,13 +319,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
