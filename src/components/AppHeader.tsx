@@ -16,7 +16,16 @@ export function AppHeader({
   warningCount?: number | undefined;
   onWarnings?: (() => void) | undefined;
 }) {
-  const { now, role, setRole, simOffsetMs, ready } = useStore();
+  const { now, role, setRole, simOffsetMs, ready, syncState, crew } = useStore();
+  const syncLabel = !ready
+    ? "Loading"
+    : syncState === "syncing"
+      ? `Syncing ${crew.queue.length}`
+      : syncState === "conflict"
+        ? "Conflict"
+        : syncState === "synced"
+          ? "Synced"
+          : "Local";
   const dayLabel = DAY_LABELS[now.date] ?? now.weekday;
 
   return (
@@ -80,10 +89,14 @@ export function AppHeader({
         <span
           className={cn(
             "num ml-1 rounded border px-1.5 py-1 text-[9px] font-semibold tracking-wide uppercase",
-            ready ? "border-ok text-ok" : "border-border text-muted-foreground",
+            syncState === "conflict"
+              ? "border-destructive text-destructive"
+              : ready
+                ? "border-ok text-ok"
+                : "border-border text-muted-foreground",
           )}
         >
-          {ready ? "Local ✓" : "Loading"}
+          {syncLabel}
         </span>
       </div>
     </header>

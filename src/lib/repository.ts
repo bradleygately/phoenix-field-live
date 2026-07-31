@@ -1,5 +1,11 @@
 import { DEFAULT_SETTINGS, type TravelSettings } from "./settings";
+import { SEED_INTERVIEWS } from "@/data/interviews";
 import { EMPTY_CREW_STATE, type CrewState } from "@/types";
+
+export const INITIAL_CREW_STATE: CrewState = {
+  ...EMPTY_CREW_STATE,
+  interviews: SEED_INTERVIEWS,
+};
 
 export interface PersistedState {
   crew: CrewState;
@@ -8,7 +14,7 @@ export interface PersistedState {
 }
 
 export const EMPTY_PERSISTED: PersistedState = {
-  crew: EMPTY_CREW_STATE,
+  crew: INITIAL_CREW_STATE,
   settings: DEFAULT_SETTINGS,
   version: 1,
 };
@@ -23,7 +29,7 @@ export interface StateRepository {
   clear(): Promise<void>;
 }
 
-const KEY = "psi-games-live-crew-control:v1";
+const KEY = "psi-games-live-crew-control:v2";
 
 class LocalStorageRepository implements StateRepository {
   async load(): Promise<PersistedState> {
@@ -34,7 +40,7 @@ class LocalStorageRepository implements StateRepository {
       const parsed = JSON.parse(raw) as Partial<PersistedState>;
       return {
         version: 1,
-        crew: { ...EMPTY_CREW_STATE, ...(parsed.crew ?? {}) },
+        crew: { ...INITIAL_CREW_STATE, ...(parsed.crew ?? {}) },
         settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
       };
     } catch {
