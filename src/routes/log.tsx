@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
-import { Panel, SectionLabel } from "@/components/primitives";
+import { Panel, SectionLabel, TapButton } from "@/components/primitives";
 import { useStore } from "@/state/store";
+import { LOG_KINDS, type LogKind } from "@/types";
 
 export const Route = createFileRoute("/log")({
   head: () => ({
@@ -25,11 +27,55 @@ export const Route = createFileRoute("/log")({
 });
 
 function LogScreen() {
-  const { crew, revertChange } = useStore();
+  const { crew, revertChange, exportState, syncState } = useStore();
+  const [kind, setKind] = useState<LogKind | "all">("all");
+  const [copied, setCopied] = useState(false);
   const active = crew.changes.filter((c) => !c.reverted);
+  const entries = useMemo(
+    () => (kind === "all" ? crew.log : crew.log.filter((e) => e.kind === kind)),
+    [crew.log, kind],
+  );
+
+  const report = () =>
+    [
+      `PSI GAMES CREW LOG — exported ${new Date().toLocaleString()}`,
+      `Sync: ${syncState.toUpperCase()} · queued edits: ${crew.queue.length}`,
+      "",
+      "ACTIVE OVERRIDES",
+      ...active.map(
+        (c) => `- ${c.field}: "${c.officialValue}" → "${c.currentValue}" (${c.editor}: ${c.reason})`,
+      ),
+      "",
+      "ACTIVITY",
+      ...crew.log.map(
+        (e) => `- ${new Date(e.at).toLocaleTimeString()} [${e.kind}] ${e.editor}: ${e.text}`,
+      ),
+    ].join("\n");
 
   return (
     <AppShell>
+      <div className="flex flex-wrap gap-1">
+        <TapButton
+          tone="gold"
+          active={kind === "all"}
+          className="h-9 px-2 text-[10px]"
+          onClick={() => setKind("all")}
+        >
+          all
+        </TapButton>
+        {LOG_KINDS.map((k) => (
+          <TapButton
+            key={k}
+            tone="gold"
+            active={kind === k}
+            className="h-9 px-2 text-[10px]"
+            onClick={() => setKind(k)}
+          >
+            {k}
+          </TapButton>
+        ))}
+      </div>
+
       <Panel>
         <SectionLabel>Revertible changes ({active.length})</SectionLabel>
         {active.length === 0 ? (
@@ -64,12 +110,12 @@ function LogScreen() {
       </Panel>
 
       <Panel>
-        <SectionLabel>Activity log</SectionLabel>
-        {crew.log.length === 0 ? (
+        <SectionLabel>Activity log ({entries.length})</SectionLabel>
+        {entries.length === 0 ? (
           <p className="text-xs text-muted-foreground">Nothing logged yet.</p>
         ) : (
           <ul className="space-y-1.5">
-            {crew.log.map((entry) => (
+            {entries.map((entry) => (
               <li key={entry.id} className="text-[11px]">
                 <span className="num mr-1 text-[10px] text-muted-foreground uppercase">
                   {new Date(entry.at).toLocaleTimeString()} · {entry.kind} ·{" "}
@@ -80,6 +126,27 @@ function LogScreen() {
             ))}
           </ul>
         )}
+      </Panel>
+
+      <Panel className="space-y-1.5">
+        <SectionLabel>Handoff report</SectionLabel>
+        <div className="grid grid-cols-2 gap-1.5">
+          <TapButton
+            className="h-11"
+            onClick={() => {
+              void navigator.clipboard?.writeText(report());
+              setCopied(true);
+            }}
+          >
+            {copied ? "Copied ✓" : "Copy text report"}
+          </TapButton>
+          <TapButton
+            className="h-11"
+            onClick={() => void navigator.clipboard?.writeText(exportState())}
+          >
+            Copy JSON state
+          </TapButton>
+        </div>
       </Panel>
     </AppShell>
   );
