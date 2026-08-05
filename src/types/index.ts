@@ -55,6 +55,53 @@ export interface ScheduleItem {
   commit: Commit;
 }
 
+/* -------------------------------- program -------------------------------- */
+
+export const PROGRAM_TRACKS = [
+  "registration",
+  "remarks",
+  "keynote",
+  "presentation",
+  "panel",
+  "workshop",
+  "competition",
+  "break",
+  "community",
+  "ceremony",
+] as const;
+
+export type ProgramTrack = (typeof PROGRAM_TRACKS)[number];
+
+/**
+ * One session exactly as printed in the official published program. This is the
+ * record the crew reconcile against; it carries no crew state and is never
+ * mutated.
+ */
+export interface ProgramSession {
+  id: string;
+  /** ISO date, e.g. "2026-07-31" */
+  date: string;
+  startMin: number;
+  endMin: number;
+  startLabel: string;
+  endLabel: string;
+  /** Title as printed, verbatim — including placeholders like "Presentation". */
+  title: string;
+  /** Presenters as printed, in printed order. Empty when the program lists none. */
+  speakers: string[];
+  /** Room as printed. Maps onto a venue node via lib/travel. */
+  room: string;
+  track: ProgramTrack;
+  /** Session features minors — guardian releases apply. */
+  minors?: boolean | undefined;
+  /** Platinum-tier access; coverage depends on approval. */
+  platinum?: boolean | undefined;
+  /** The published listing itself is incomplete and must be verified on site. */
+  incomplete?: boolean | undefined;
+  /** Verbatim qualifier printed with the listing. */
+  note?: string | undefined;
+}
+
 /** A revertible operational override of an official value. */
 export interface FieldChange {
   id: string;
